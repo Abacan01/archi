@@ -1,10 +1,17 @@
 import { getSiteContent } from "../../lib/content";
 import { SiteFooter } from "../../components/site-footer";
 import { SiteHeader } from "../../components/site-header";
+import { InlineEditor } from "../../components/inline-editor";
+import { ContactCard } from "../../components/contact-card";
 
 export const dynamic = "force-dynamic";
 
-export default async function ContactPage() {
+type ContactPageProps = {
+  searchParams?: { [key: string]: string | string[] };
+};
+
+export default async function ContactPage({ searchParams }: ContactPageProps) {
+  const isEditMode = searchParams?.editMode === "true";
   const siteContent = await getSiteContent();
   const contact = siteContent.contact;
   return (
@@ -15,13 +22,13 @@ export default async function ContactPage() {
       <main>
         <section className="section container reveal" id="contact">
           <div className="section-head">
-            <h2>{contact.title}</h2>
+            <InlineEditor as="h2" path="contact.title" initialValue={contact.title} />
           </div>
           <div className="contact-layout">
             <form id="contactForm" className="contact-form" noValidate>
               <div className="contact-form-head">
-                <h3>{contact.formTitle}</h3>
-                <p>{contact.formIntro}</p>
+                <InlineEditor as="h3" path="contact.formTitle" initialValue={contact.formTitle} />
+                <InlineEditor as="p" path="contact.formIntro" initialValue={contact.formIntro} multiline />
               </div>
               <div className="form-grid">
                 <label>
@@ -116,7 +123,7 @@ export default async function ContactPage() {
 
             <div className="contact-side">
               <aside className="contact-card map-card" aria-label="Office map location">
-                <h3>{contact.officeHeading}</h3>
+                <InlineEditor as="h3" path="contact.officeHeading" initialValue={contact.officeHeading} />
                 <div className="contact-map-wrap">
                   <iframe
                     title="JCCHUA and Associates office map"
@@ -125,36 +132,12 @@ export default async function ContactPage() {
                     src={contact.officeMapUrl}
                   />
                   <p className="map-link">
-                    <a href={contact.officeMapLinkUrl} target="_blank" rel="noopener noreferrer">{contact.officeMapLink}</a>
+                    <a href={contact.officeMapLinkUrl} target="_blank" rel="noopener noreferrer"><InlineEditor path="contact.officeMapLink" initialValue={contact.officeMapLink} /></a>
                   </p>
                 </div>
               </aside>
 
-              <aside className="contact-card">
-                <h3>{contact.contactHeading}</h3>
-                <p className="contact-name">{contact.contactName}</p>
-                <p>{contact.contactRoles}</p>
-                <dl className="contact-list">
-                  {(contact.addressLines || []).map((line) => (
-                    <div key={line} className="contact-list-row">
-                      <dt className="contact-list-label">Address</dt>
-                      <dd>{line}</dd>
-                    </div>
-                  ))}
-                  <div className="contact-list-row">
-                    <dt className="contact-list-label">Mobile</dt>
-                    <dd>
-                      <a href={`tel:${contact.phone?.replace(/[^+\d]/g, "")}`}>{contact.phone}</a>
-                    </dd>
-                  </div>
-                  <div className="contact-list-row">
-                    <dt className="contact-list-label">Email</dt>
-                    <dd>
-                      <a href={`mailto:${contact.email}`}>{contact.email}</a>
-                    </dd>
-                  </div>
-                </dl>
-              </aside>
+              <ContactCard contact={contact} isEditMode={isEditMode} />
             </div>
           </div>
         </section>

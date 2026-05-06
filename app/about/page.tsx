@@ -3,10 +3,18 @@ import { getSiteContent } from "../../lib/content";
 import { SiteFooter } from "../../components/site-footer";
 import { SiteHeader } from "../../components/site-header";
 import { InlineEditor } from "../../components/inline-editor";
+import { AboutAchievements } from "../../components/about-achievements";
+import { AboutServices } from "../../components/about-services";
+import { AboutPrinciples } from "../../components/about-principles";
 
 export const dynamic = "force-dynamic";
 
-export default async function AboutPage() {
+type AboutPageProps = {
+  searchParams?: { [key: string]: string | string[] };
+};
+
+export default async function AboutPage({ searchParams }: AboutPageProps) {
+  const isEditMode = searchParams?.editMode === "true";
   const siteContent = await getSiteContent();
   const { about, global } = siteContent;
 
@@ -36,52 +44,12 @@ export default async function AboutPage() {
             </header>
 
             <div className="about-unified-body">
-              <aside className="about-achievements">
-                <section className="about-side-block">
-                  <p className="sidebar-eyebrow">Licenses</p>
-                  <div className="about-chip-list">
-                    {(about.licenseNumbers || []).map((item) => <span className="about-chip" key={item}>{item}</span>)}
-                  </div>
-                </section>
-
-                <section className="about-side-block">
-                  <p className="sidebar-eyebrow">Memberships</p>
-                  <p className="about-membership-line">{(about.memberships || []).map((item) => item.title).filter(Boolean).join(" · ")}</p>
-                </section>
-
-                <section className="about-side-block">
-                  <p className="sidebar-eyebrow">Specializations</p>
-                  <div className="about-chip-list">
-                    {(about.specializations || []).map((item) => <span className="about-chip" key={item}>{item}</span>)}
-                  </div>
-                </section>
-              </aside>
+              <AboutAchievements about={about} isEditMode={isEditMode} />
 
               <div className="about-main-content">
-                <section>
-                  <p className="db-eyebrow">Services</p>
-                  <div className="service-stack">
-                    {(about.services || []).map((service) => (
-                      <article className="service-row" key={service.title}>
-                        <h4>{service.title}</h4>
-                        {(service.paragraphs || []).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-                      </article>
-                    ))}
-                  </div>
-                </section>
+                <AboutServices about={about} isEditMode={isEditMode} />
 
-                <section>
-                  <p className="db-eyebrow">Architecture Design</p>
-                  <div className="service-stack">
-                    {(about.principles || []).map((paragraph) => (
-                      <article className="service-row" key={paragraph}>
-                        <blockquote className="design-philosophy-quote">
-                          {paragraph}
-                        </blockquote>
-                      </article>
-                    ))}
-                  </div>
-                </section>
+                <AboutPrinciples about={about} isEditMode={isEditMode} />
               </div>
             </div>
           </article>

@@ -5,6 +5,8 @@ import { defaultSiteContent } from "../../lib/content-defaults";
 import { SiteFooter } from "../../components/site-footer";
 import { SiteHeader } from "../../components/site-header";
 import { InlineEditor } from "../../components/inline-editor";
+import { AddProjectButton } from "../../components/add-project-button";
+import { RemoveProjectButton } from "../../components/remove-project-button";
 import type { ProjectItem, SpotlightPanel } from "../../lib/content-types";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +16,13 @@ function getStatusLabel(status: string | null | undefined) {
   return status;
 }
 
-export default async function ProjectsPage() {
+type ProjectsPageProps = {
+  searchParams?: { [key: string]: string | string[] };
+};
+
+export default async function ProjectsPage({ searchParams }: ProjectsPageProps) {
+  const isEditMode = searchParams?.editMode === "true";
+  const editModeParam = isEditMode ? "?editMode=true" : "";
   const siteContent = await getSiteContent();
   const content = siteContent.projectsPage;
   const projects: ProjectItem[] = siteContent.projectItems || [];
@@ -37,6 +45,100 @@ export default async function ProjectsPage() {
       (panel.points && panel.points.length)
     )
   ));
+
+  const renderSpotlightPanel = (panel: SpotlightPanel, index: number) => {
+    const fallbackProject = projects[index] || projects[0];
+    const isImageRight = index % 2 === 0;
+
+    return (
+      <article className={`project-spotlight${isImageRight ? " is-image-right" : ""}`} aria-live="polite" key={`${panel.title || "panel"}-${index}`}>
+        <div className="project-spotlight-media" style={{ position: "relative", height: "100%" }}>
+          <Image
+            src={panel.imageUrl || fallbackProject?.coverImageUrl || "/assets/images/mckinley-west-residence.jpg"}
+            alt={panel.imageAlt || fallbackProject?.coverImageAlt || "Project image"}
+            fill
+            sizes="(max-width: 940px) 100vw, 55vw"
+            style={{ objectFit: "cover", objectPosition: "50% 50%" }}
+          />
+        </div>
+        <div className="project-spotlight-copy">
+          <InlineEditor as="h3" path={`projectsPage.${index === 0 ? "spotlight" : index === 1 ? "spotlightTwo" : index === 2 ? "spotlightThree" : "spotlightFour"}.title`} initialValue={panel.title || fallbackProject?.title || "Featured Architecture"} />
+          <InlineEditor as="p" className="spotlight-type" path={`projectsPage.${index === 0 ? "spotlight" : index === 1 ? "spotlightTwo" : index === 2 ? "spotlightThree" : "spotlightFour"}.type`} initialValue={panel.type || fallbackProject?.category || "Residential"} />
+          <InlineEditor as="p" className="spotlight-description" path={`projectsPage.${index === 0 ? "spotlight" : index === 1 ? "spotlightTwo" : index === 2 ? "spotlightThree" : "spotlightFour"}.description`} initialValue={panel.description || "Project details available on request."} multiline />
+          <div className="spotlight-points">
+            {(panel.points || []).map((point, pointIndex) => (
+              <InlineEditor key={`${point}-${index}`} as="span" path={`projectsPage.${index === 0 ? "spotlight" : index === 1 ? "spotlightTwo" : index === 2 ? "spotlightThree" : "spotlightFour"}.points[${pointIndex}]`} initialValue={point} />
+            ))}
+          </div>
+          {panel.moreDetailsUrl && (
+            <a
+              className="spotlight-more-link"
+              href={panel.moreDetailsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              More Details
+            </a>
+          )}
+        </div>
+      </article>
+    );
+  };
+
+  const renderProjectCard = (project: ProjectItem, index: number) => {
+    const href = project.slug ? `/projects/detail?slug=${encodeURIComponent(project.slug)}${editModeParam ? "&editMode=true" : ""}` : `/projects${editModeParam}`;
+
+    if (!isEditMode) {
+      return (
+        <Link
+          className="project-card"
+          data-type={(project.category || "").toLowerCase()}
+          data-stage={project.status === "Completed" || project.status === "Sold" ? "accomplished" : "rendered"}
+          key={project.slug || project.title || project.id || String(index)}
+          href={href}
+          aria-label={`Open ${project.title}`}
+        >
+          {project.coverImageUrl ? (
+            <Image src={project.coverImageUrl} alt={project.coverImageAlt || project.title || "Project image"} width={960} height={640} />
+          ) : (
+            <div style={{ width: "100%", aspectRatio: "16 / 10", background: "rgba(255,255,255,0.06)" }} />
+          )}
+          <div>
+            <p className="tag">{project.category}</p>
+            <p className={`status-pill ${project.status === "Completed" || project.status === "Sold" ? "status-pill-accomplished" : "status-pill-rendered"}`}>
+              {getStatusLabel(project.status || null)}
+            </p>
+            <h3>{project.title}</h3>
+          </div>
+        </Link>
+      );
+    }
+
+    return (
+      <article className="project-card" data-type={(project.category || "").toLowerCase()} data-stage={project.status === "Completed" || project.status === "Sold" ? "accomplished" : "rendered"} key={project.slug || project.title || project.id || String(index)}>
+        <div style={{ position: "relative", width: "100%", aspectRatio: "4 / 3", overflow: "hidden", background: "rgba(255,255,255,0.06)" }}>
+          {isEditMode && (
+            <div style={{ position: "absolute", top: "0.75rem", right: "0.75rem", zIndex: 3 }}>
+              <RemoveProjectButton index={index} title={project.title} />
+            </div>
+          )}
+          {project.coverImageUrl ? (
+            <InlineEditor type="image" path={`projectItems[${index}].coverImageUrl`} initialValue={project.coverImageUrl} />
+          ) : (
+            <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: "rgba(255,255,255,0.55)", fontSize: "0.85rem" }}>
+              No cover image
+            </div>
+          )}
+        </div>
+        <div>
+          <InlineEditor as="p" className="tag" path={`projectItems[${index}].category`} initialValue={project.category} />
+          <InlineEditor as="p" className={`status-pill ${project.status === "Completed" || project.status === "Sold" ? "status-pill-accomplished" : "status-pill-rendered"}`} path={`projectItems[${index}].status`} initialValue={project.status || "Published"} />
+          <InlineEditor as="h3" path={`projectItems[${index}].title`} initialValue={project.title} />
+          <InlineEditor as="p" className="spotlight-description" path={`projectItems[${index}].descriptionText`} initialValue={project.descriptionText || ""} multiline />
+        </div>
+      </article>
+    );
+  };
   return (
     <>
       <SiteHeader brand={siteContent.global.brand} navItems={siteContent.global.navItems} />
@@ -44,8 +146,20 @@ export default async function ProjectsPage() {
 
       <main>
         <section className="section container reveal" id="projects">
-          <div className="section-head">
+          <div className="section-head" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
             <InlineEditor as="h2" path="projectsPage.portfolioTitle" initialValue={content.portfolioTitle || defaultProjectsContent.portfolioTitle} />
+            <AddProjectButton
+              isEditMode={isEditMode}
+              compact
+              label="+ Add New Project"
+              style={{
+                marginTop: 0,
+                boxShadow: "0 14px 30px rgba(0, 0, 0, 0.28)",
+                backgroundColor: "rgba(88, 126, 69, 0.95)",
+                color: "#fff",
+                borderColor: "rgba(255,255,255,0.22)",
+              }}
+            />
             <div className="project-filter-tabs" style={{ display: "none" }}>
               {filterLabels.map((label, i) => {
                 const filterValue = i === 0 ? "all" : label.toLowerCase();
@@ -74,12 +188,14 @@ export default async function ProjectsPage() {
                 style={{ objectFit: "cover", objectPosition: "50% 50%" }}
               />
             </div>
-            <div className="project-spotlight-copy">
-              <InlineEditor as="h3" id="spotlightTitle" path="projectsPage.spotlight.title" initialValue={spotlight?.title || projects[0]?.title || "Mckinley West Residence"} />
-              <InlineEditor as="p" id="spotlightType" className="spotlight-type" path="projectsPage.spotlight.type" initialValue={spotlight?.type || projects[0]?.category || "Residential"} />
+            <div className="project-spotlight-copy" style={{ position: "relative" }}>
+              <div>
+                <InlineEditor as="h3" id="spotlightTitle" path="projectsPage.spotlight.title" initialValue={spotlight?.title || projects[0]?.title || "Mckinley West Residence"} />
+                <InlineEditor as="p" id="spotlightType" className="spotlight-type" path="projectsPage.spotlight.type" initialValue={spotlight?.type || projects[0]?.category || "Residential"} />
+              </div>
               <InlineEditor as="p" id="spotlightDescription" className="spotlight-description" path="projectsPage.spotlight.description" initialValue={spotlight?.description} multiline />
               <div className="spotlight-points">
-                {(spotlight?.points || []).map((point) => <span key={point}>{point}</span>)}
+                {(spotlight?.points || []).map((point, idx) => <InlineEditor as="span" key={idx} path={`projectsPage.spotlight.points[${idx}]`} initialValue={point} />)}
               </div>
               {spotlight?.moreDetailsUrl && (
                 <a
@@ -94,66 +210,10 @@ export default async function ProjectsPage() {
             </div>
           </article>
 
-          {additionalPanels.map((panel, index) => {
-            const fallbackProject = projects[index] || projects[0];
-            const isImageRight = index % 2 === 0;
-            return (
-              <article className={`project-spotlight${isImageRight ? " is-image-right" : ""}`} aria-live="polite" key={`${panel.title || "panel"}-${index}`}>
-                <div className="project-spotlight-media" style={{ position: "relative", height: "100%" }}>
-                  <Image
-                    src={panel.imageUrl || fallbackProject?.coverImageUrl || "/assets/images/mckinley-west-residence.jpg"}
-                    alt={panel.imageAlt || fallbackProject?.coverImageAlt || "Project image"}
-                    fill
-                    sizes="(max-width: 940px) 100vw, 55vw"
-                    style={{ objectFit: "cover", objectPosition: "50% 50%" }}
-                  />
-                </div>
-                <div className="project-spotlight-copy">
-                  <h3>{panel.title || fallbackProject?.title || "Featured Architecture"}</h3>
-                  <p className="spotlight-type">{panel.type || fallbackProject?.category || "Residential"}</p>
-                  <p className="spotlight-description">{panel.description || "Project details available on request."}</p>
-                  <div className="spotlight-points">
-                    {(panel.points || []).map((point) => <span key={`${point}-${index}`}>{point}</span>)}
-                  </div>
-                  {panel.moreDetailsUrl && (
-                    <a
-                      className="spotlight-more-link"
-                      href={panel.moreDetailsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      More Details
-                    </a>
-                  )}
-                </div>
-              </article>
-            );
-          })}
+          {additionalPanels.map((panel, index) => renderSpotlightPanel(panel, index + 1))}
 
           <div className="project-grid">
-            {projects.map((project, index) => (
-              <Link
-                className="project-card"
-                data-type={(project.category || "").toLowerCase()}
-                data-stage={project.status === "Completed" || project.status === "Sold" ? "accomplished" : "rendered"}
-                key={project.slug || project.title || project.id || String(index)}
-                href={project.slug ? `/projects/detail?slug=${encodeURIComponent(project.slug)}` : "/projects"}
-                aria-label={`Open ${project.title}`}
-              >
-                {project.coverImageUrl ? (
-                  <Image src={project.coverImageUrl} alt={project.coverImageAlt || project.title || "Project image"} width={960} height={640} />
-                ) : (
-                  <div style={{ width: "100%", aspectRatio: "16 / 10", background: "rgba(255,255,255,0.06)" }} />
-                )}
-                <div>
-                  <p className="tag">{project.category}</p>
-                  <p className={`status-pill ${project.status === "Completed" || project.status === "Sold" ? "status-pill-accomplished" : "status-pill-rendered"}`}>
-                    {getStatusLabel(project.status || null)}
-                  </p>
-                  <h3>{project.title}</h3>
-                </div>
-              </Link>
-            ))}
+            {projects.map((project, index) => renderProjectCard(project, index))}
           </div>
 
           <div id="carouselLightbox" className="carousel-lightbox" aria-hidden="true">

@@ -373,8 +373,8 @@ export default function AdminPage() {
                 <button className="btn btn-outline" type="button" onClick={confirmSeedDefaults} disabled={isBusy}>
                   <IconSeed /> Reset to Defaults
                 </button>
-                <a href="/" className="btn btn-primary">
-                  Go to Website
+                <a href="/?editMode=true" className="btn btn-primary">
+                  Go to Website (Edit Mode)
                 </a>
               </div>
             </div>

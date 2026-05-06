@@ -7,7 +7,7 @@ import { SiteHeader } from "../../../components/site-header";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  searchParams?: { slug?: string | string[] };
+  searchParams?: { slug?: string | string[]; editMode?: string | string[] };
 };
 
 export default async function ProjectDetailPage({ searchParams }: PageProps) {
@@ -16,6 +16,8 @@ export default async function ProjectDetailPage({ searchParams }: PageProps) {
   const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug || "";
   const project = slug ? await getProjectBySlug(slug) : null;
   const gallery = (project?.gallery || []).filter((item) => item.imageUrl);
+  
+  const editModeParam = searchParams?.editMode === "true" ? "?editMode=true" : "";
 
   return (
     <>
@@ -38,13 +40,13 @@ export default async function ProjectDetailPage({ searchParams }: PageProps) {
 
           {!slug ? (
             <p className="section-note">
-              Choose a project from <Link href="/projects">Projects</Link> to view details.
+              Choose a project from <Link href={`/projects${editModeParam}`}>Projects</Link> to view details.
             </p>
           ) : null}
 
           {!project && slug ? (
             <p className="section-note">
-              Project details are not available. Please return to <Link href="/projects">Projects</Link>.
+              Project details are not available. Please return to <Link href={`/projects${editModeParam}`}>Projects</Link>.
             </p>
           ) : null}
 
@@ -90,7 +92,7 @@ export default async function ProjectDetailPage({ searchParams }: PageProps) {
           ) : null}
 
           <p className="section-note" style={{ marginTop: "1.2rem" }}>
-            <Link href="/projects">Back to Projects</Link>
+            <Link href={`/projects${editModeParam}`}>Back to Projects</Link>
           </p>
         </section>
       </main>

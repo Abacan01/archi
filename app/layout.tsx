@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
+import { EditSessionProvider } from "../components/edit-session-provider";
+import { EditSessionToolbar } from "../components/edit-session-toolbar";
 import { SiteRuntimeScript } from "../components/site-runtime-script";
 
 export const metadata: Metadata = {
@@ -51,7 +53,10 @@ export default function RootLayout({
   }
 })();`}
         </Script>
-        {children}
+        <EditSessionProvider>
+          {children}
+          <EditSessionToolbar />
+        </EditSessionProvider>
         <SiteRuntimeScript />
       </body>
     </html>

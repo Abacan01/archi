@@ -6,9 +6,15 @@ import { InlineEditor } from "../components/inline-editor";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+type HomePageProps = {
+  searchParams?: { [key: string]: string | string[] };
+};
+
+export default async function HomePage({ searchParams }: HomePageProps) {
   const siteContent = await getSiteContent();
   const { home, global, projectItems } = siteContent;
+  
+  const editModeParam = searchParams?.editMode === "true" ? "?editMode=true" : "";
 
   const projects = projectItems || [];
   const featuredProject = projects[0];
@@ -31,15 +37,15 @@ export default async function HomePage() {
           <div className="hero-copy reveal in-view">
             <InlineEditor as="p" className="eyebrow" path="home.eyebrow" initialValue={home.eyebrow} />
             <InlineEditor as="h1" path="home.title" initialValue={home.title} />
-            {heroParagraphs.map((paragraph) => (
-              <p className="lead" key={paragraph}>{paragraph}</p>
+            {heroParagraphs.map((paragraph, index) => (
+              <InlineEditor key={index} as="p" className="lead" path={`home.paragraphs[${index}]`} initialValue={paragraph} multiline />
             ))}
             <div className="hero-actions">
               {heroActions.map((action) => (
                 <a
                   key={`${action.label}-${action.href}`}
                   className={action.variant === "primary" ? "btn btn-primary" : "btn btn-outline"}
-                  href={action.href === "#projects" ? "/projects" : action.href || "#"}
+                  href={action.href === "#projects" ? `/projects${editModeParam}` : action.href ? `${action.href}${editModeParam}` : "#"}
                 >
                   {action.label}
                 </a>
@@ -73,9 +79,9 @@ export default async function HomePage() {
                     />
                   </div>
                   <div className="hero-showcase-tile-copy">
-                    <p className="tag">{tile.tag}</p>
-                    <h3>{tile.title}</h3>
-                    {tile.description ? <p className="hero-showcase-tile-desc">{tile.description}</p> : null}
+                    <InlineEditor as="p" className="tag" path={`home.tiles[${index}].tag`} initialValue={tile.tag} />
+                    <InlineEditor as="h3" path={`home.tiles[${index}].title`} initialValue={tile.title} />
+                    {tile.description ? <InlineEditor as="p" className="hero-showcase-tile-desc" path={`home.tiles[${index}].description`} initialValue={tile.description} multiline /> : null}
                   </div>
                 </article>
               ))}

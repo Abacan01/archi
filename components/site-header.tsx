@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState, type MouseEvent } from "react";
 import type { Brand, NavItem } from "../lib/content-types";
 
@@ -25,6 +25,8 @@ const defaultNavItems: NavItem[] = [
 
 export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isEditMode = searchParams.get("editMode") === "true";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const resolvedBrand = brand ?? defaultBrand;
   const items = navItems?.length ? navItems : defaultNavItems;
@@ -38,12 +40,19 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
     }
   }
 
+  const getNavigationHref = (href: string) => {
+    if (isEditMode) {
+      return `${href}${href.includes("?") ? "&" : "?"}editMode=true`;
+    }
+    return href;
+  };
+
   return (
     <header className="site-header" id="top">
       <div className="container nav-wrap island">
         <Link
           className="brand"
-          href="/"
+          href={getNavigationHref("/")}
           aria-label={`${resolvedBrand.text} home`}
           onClick={(event) => scrollToTopOnActiveHome(event, "/")}
         >
@@ -56,13 +65,33 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
             <Link
               key={item.href}
               className={pathname === item.href ? "active" : ""}
-              href={item.href}
+              href={getNavigationHref(item.href)}
               onClick={(event) => scrollToTopOnActiveHome(event, item.href)}
             >
               {item.label}
             </Link>
           ))}
         </nav>
+
+        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+          {isEditMode && (
+            <>
+              <span style={{ 
+                backgroundColor: "#ff6b6b", 
+                color: "white", 
+                padding: "0.25rem 0.75rem", 
+                borderRadius: "4px",
+                fontSize: "0.875rem",
+                fontWeight: "bold"
+              }}>
+                EDIT MODE
+              </span>
+              <Link href="/admin" className="btn btn-outline" style={{ padding: "0.5rem 1rem", fontSize: "0.875rem" }}>
+                Back to Admin
+              </Link>
+            </>
+          )}
+        </div>
 
         <button
           id="menuToggle"
@@ -85,7 +114,7 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
           <Link
             key={item.href}
             className={pathname === item.href ? "active" : ""}
-            href={item.href}
+            href={getNavigationHref(item.href)}
             onClick={(event) => {
               scrollToTopOnActiveHome(event, item.href);
               setIsMobileMenuOpen(false);

@@ -106,6 +106,11 @@ export type ContactContent = {
   formTitle?: string;
   formIntro?: string;
   officeHeading?: string;
+  officeLocations?: Array<{
+    mapUrl?: string;
+    mapLinkUrl?: string;
+    mapLink?: string;
+  }>;
   officeMapUrl?: string;
   officeMapLinkUrl?: string;
   officeMapLink?: string;
@@ -113,7 +118,9 @@ export type ContactContent = {
   contactName?: string;
   contactRoles?: string;
   addressLines?: string[];
+  phones?: Array<{ number?: string; label?: string }>;
   phone?: string;
+  emails?: Array<{ address?: string; label?: string }>;
   email?: string;
 };
 
