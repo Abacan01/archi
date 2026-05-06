@@ -1,0 +1,93 @@
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 4rem;
+}
+
+.service-card {
+  display: grid;
+  gap: 0.8rem;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--panel-bg-top), var(--panel-bg-bottom));
+  padding: 1rem;
+}
+
+.service-card h3 {
+  font-size: 1.35rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.service-card p {
+  color: var(--muted);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.service-card .tag {
+  color: var(--primary);
+}
+
+.accordion {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.accordion-item {
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--panel-bg-top), var(--panel-bg-bottom));
+}
+
+.accordion-trigger {
+  border: 0;
+  width: 100%;
+  text-align: left;
+  padding: 1rem;
+  font: inherit;
+  font-weight: 600;
+  background: transparent;
+  cursor: pointer;
+}
+
+.accordion-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 340ms ease;
+}
+
+.accordion-item.open .accordion-panel {
+  max-height: 160px;
+}
+
+.accordion-panel p {
+  padding: 0 1rem 1rem;
+  color: var(--muted);
+}
+
+.accordion-static .accordion-item {
+  padding: 1rem;
+}
+
+.accordion-label {
+  margin: 0;
+  font-weight: 600;
+}
+
+.accordion-static .accordion-panel {
+  max-height: none;
+  overflow: visible;
+  transition: none;
+}
+
+.accordion-static .accordion-panel p {
+  padding: 0;
+  margin: 0.45rem 0 0;
+}
+
+@media (max-width: 940px) {
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+}

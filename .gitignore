@@ -1,0 +1,13 @@
+.vercel
+node_modules
+.next
+out
+dist
+# Environment files: ignore real secrets, keep example templates in git
+.env
+.env.*
+!.env*.example
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
