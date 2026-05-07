@@ -86,42 +86,9 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
   };
 
   const renderProjectCard = (project: ProjectItem, index: number) => {
-    const href = project.slug ? `/projects/detail?slug=${encodeURIComponent(project.slug)}${editModeParam ? "&editMode=true" : ""}` : `/projects${editModeParam}`;
-
-    if (!isEditMode) {
-      return (
-        <Link
-          className="project-card"
-          data-type={(project.category || "").toLowerCase()}
-          data-stage={project.status === "Completed" || project.status === "Sold" ? "accomplished" : "rendered"}
-          key={project.slug || project.title || project.id || String(index)}
-          href={href}
-          aria-label={`Open ${project.title}`}
-        >
-          {project.coverImageUrl ? (
-            <Image src={project.coverImageUrl} alt={project.coverImageAlt || project.title || "Project image"} width={960} height={640} />
-          ) : (
-            <div style={{ width: "100%", aspectRatio: "16 / 10", background: "rgba(255,255,255,0.06)" }} />
-          )}
-          <div>
-            <p className="tag">{project.category}</p>
-            <p className={`status-pill ${project.status === "Completed" || project.status === "Sold" ? "status-pill-accomplished" : "status-pill-rendered"}`}>
-              {getStatusLabel(project.status || null)}
-            </p>
-            <h3>{project.title}</h3>
-          </div>
-        </Link>
-      );
-    }
-
     return (
-      <article className="project-card" data-type={(project.category || "").toLowerCase()} data-stage={project.status === "Completed" || project.status === "Sold" ? "accomplished" : "rendered"} key={project.slug || project.title || project.id || String(index)}>
+      <article className="project-card project-card-display" data-type={(project.category || "").toLowerCase()} data-stage={project.status === "Completed" || project.status === "Sold" ? "accomplished" : "rendered"} key={project.slug || project.title || project.id || String(index)}>
         <div style={{ position: "relative", width: "100%", aspectRatio: "4 / 3", overflow: "hidden", background: "rgba(255,255,255,0.06)" }}>
-          {isEditMode && (
-            <div style={{ position: "absolute", top: "0.75rem", right: "0.75rem", zIndex: 3 }}>
-              <RemoveProjectButton index={index} title={project.title} />
-            </div>
-          )}
           {project.coverImageUrl ? (
             <InlineEditor type="image" path={`projectItems[${index}].coverImageUrl`} initialValue={project.coverImageUrl} />
           ) : (
@@ -135,6 +102,11 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
           <InlineEditor as="p" className={`status-pill ${project.status === "Completed" || project.status === "Sold" ? "status-pill-accomplished" : "status-pill-rendered"}`} path={`projectItems[${index}].status`} initialValue={project.status || "Published"} />
           <InlineEditor as="h3" path={`projectItems[${index}].title`} initialValue={project.title} />
           <InlineEditor as="p" className="spotlight-description" path={`projectItems[${index}].descriptionText`} initialValue={project.descriptionText || ""} multiline />
+          {isEditMode && (
+            <div style={{ marginTop: "1rem", display: "flex", justifyContent: "flex-start" }}>
+              <RemoveProjectButton index={index} title={project.title} isEditMode={isEditMode} />
+            </div>
+          )}
         </div>
       </article>
     );

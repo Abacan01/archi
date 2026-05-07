@@ -319,6 +319,16 @@ export function GalleryView({ items }: GalleryViewProps) {
           >
             &lt;
           </button>
+          <div className="gallery-main-media">
+            <Image
+              src={activeItem.src}
+              alt={activeItem.alt}
+              fill
+              priority
+              sizes="(max-width: 900px) 100vw, calc(100vw - 140px)"
+              className="gallery-main-image"
+            />
+          </div>
           <div className="gallery-main-caption">
             <div>
               <p className="gallery-main-caption-kicker">Selected image</p>
@@ -328,16 +338,6 @@ export function GalleryView({ items }: GalleryViewProps) {
             <span className="gallery-main-counter">
               {activeIndex + 1}/{galleryItems.length}
             </span>
-          </div>
-          <div className="gallery-main-media">
-            <Image
-              src={activeItem.src}
-              alt={activeItem.alt}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 78vw"
-              className="gallery-main-image"
-            />
           </div>
           <button
             type="button"

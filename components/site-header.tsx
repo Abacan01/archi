@@ -31,7 +31,10 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
   const resolvedBrand = brand ?? defaultBrand;
   const items = navItems?.length ? navItems : defaultNavItems;
   const hasLogin = items.some((item) => item.href === "/login");
-  const navLinks = hasLogin ? items : [...items, { href: "/login", label: "Login" }];
+  let navLinks = hasLogin ? items : [...items, { href: "/login", label: "Login" }];
+  if (isEditMode) {
+    navLinks = navLinks.filter((item) => item.href !== "/login");
+  }
 
   function scrollToTopOnActiveHome(event: MouseEvent<HTMLAnchorElement>, href: string) {
     if (pathname === "/" && href === "/") {

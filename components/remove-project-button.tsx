@@ -9,13 +9,14 @@ import { useEditSession } from "./edit-session-provider";
 interface RemoveProjectButtonProps {
   index: number;
   title?: string;
+  isEditMode?: boolean;
 }
 
-export function RemoveProjectButton({ index, title }: RemoveProjectButtonProps) {
+export function RemoveProjectButton({ index, title, isEditMode: isEditModeProp }: RemoveProjectButtonProps) {
   const [isRemoving, setIsRemoving] = useState(false);
   const router = useRouter();
   const session = useEditSession();
-  const canEdit = Boolean(session?.isEditMode);
+  const canEdit = isEditModeProp !== undefined ? isEditModeProp : Boolean(session?.isEditMode);
 
   const handleRemove = async () => {
     if (!db || isRemoving || !canEdit) return;
