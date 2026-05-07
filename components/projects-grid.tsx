@@ -40,6 +40,11 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
 
     setIsDeleting(true);
     try {
+      if (!db) {
+        console.error("Firebase not configured (db is null)");
+        return;
+      }
+
       const contentRef = doc(db, "siteContent", "main");
       const contentSnap = await getDoc(contentRef);
       if (!contentSnap.exists()) return;
