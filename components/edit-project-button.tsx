@@ -9,26 +9,27 @@ import type { CSSProperties } from "react";
 import { useEditSession } from "./edit-session-provider";
 import { createPortal } from "react-dom";
 
-interface AddProjectButtonProps {
+interface EditProjectButtonProps {
+  projectIndex: number;
+  project: ProjectItem;
   isEditMode: boolean;
   compact?: boolean;
-  label?: string;
   className?: string;
   style?: CSSProperties;
 }
 
-export function AddProjectButton({ isEditMode, compact = false, label = "+ Add Project", className, style }: AddProjectButtonProps) {
-  const [isAdding, setIsAdding] = useState(false);
+export function EditProjectButton({ projectIndex, project, isEditMode, compact = false, className, style }: EditProjectButtonProps) {
+  const [isEditing, setIsEditing] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("Residential");
-  const [status, setStatus] = useState("Residential");
-  const [year, setYear] = useState(String(new Date().getFullYear()));
-  const [coverImageUrl, setCoverImageUrl] = useState("");
-  const [coverImageAlt, setCoverImageAlt] = useState("");
-  const [descriptionText, setDescriptionText] = useState("");
-  const [location, setLocation] = useState("");
+  const [title, setTitle] = useState(project.title || "");
+  const [category, setCategory] = useState(project.category || "Residential");
+  const [status, setStatus] = useState(project.status || "Residential");
+  const [year, setYear] = useState(String(project.year || new Date().getFullYear()));
+  const [coverImageUrl, setCoverImageUrl] = useState(project.coverImageUrl || "");
+  const [coverImageAlt, setCoverImageAlt] = useState(project.coverImageAlt || "");
+  const [descriptionText, setDescriptionText] = useState(project.descriptionText || "");
+  const [location, setLocation] = useState(project.location || "");
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
@@ -39,46 +40,39 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
     setIsMounted(true);
   }, []);
 
-  const slugify = (value: string) =>
-    value
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-");
-
-  const handleCreateProject = async () => {
-    if (!db || isAdding || !canEdit) return;
+  const handleUpdateProject = async () => {
+    if (!db || isEditing || !canEdit) return;
     const safeTitle = title.trim();
     if (!safeTitle) return;
 
-    setIsAdding(true);
+    setIsEditing(true);
 
     try {
-      const normalizedSlug = slugify(safeTitle) || `project-${Date.now()}`;
-      const newProject: ProjectItem = {
-        title: safeTitle,
-        category: category || "Residential",
-        status: status || "Residential",
-        year: Number(year) || new Date().getFullYear(),
-        slug: normalizedSlug,
-        location: location.trim(),
-        descriptionText: descriptionText.trim(),
-        coverImageUrl: coverImageUrl.trim() || "",
-        coverImageAlt: coverImageAlt.trim() || `${safeTitle} cover image`,
-        gallery: [],
-      };
-
       const contentRef = doc(db, "siteContent", "main");
       const contentSnap = await getDoc(contentRef);
       if (!contentSnap.exists()) return;
 
       const data = contentSnap.data();
-      const nextProjects = [...(data.projectItems || []), newProject];
+      const currentProjects = Array.isArray(data.projectItems) ? [...data.projectItems] : [];
+      if (projectIndex < 0 || projectIndex >= currentProjects.length) return;
+
+      const updatedProject: ProjectItem = {
+        ...currentProjects[projectIndex],
+        title: safeTitle,
+        category: category || "Residential",
+        status: status || "Residential",
+        year: Number(year) || new Date().getFullYear(),
+        location: location.trim(),
+        descriptionText: descriptionText.trim(),
+        coverImageUrl: coverImageUrl.trim() || "",
+        coverImageAlt: coverImageAlt.trim() || `${safeTitle} cover image`,
+      };
+
+      currentProjects[projectIndex] = updatedProject;
 
       await setDoc(contentRef, {
         ...data,
-        projectItems: nextProjects,
+        projectItems: currentProjects,
       }, { merge: false });
 
       const historyRef = doc(collection(db, "siteHistory"));
@@ -86,25 +80,17 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
         timestamp: serverTimestamp(),
         data: {
           ...data,
-          projectItems: nextProjects,
+          projectItems: currentProjects,
         },
-        author: "Admin (Add Project)",
+        author: "Admin (Edit Project)",
       });
 
       setIsFormOpen(false);
-      setTitle("");
-      setCategory("Residential");
-      setStatus("Residential");
-      setYear(String(new Date().getFullYear()));
-      setCoverImageUrl("");
-      setCoverImageAlt("");
-      setDescriptionText("");
-      setLocation("");
       router.refresh();
     } catch (error) {
-      console.error("Failed to add project:", error);
+      console.error("Failed to update project:", error);
     } finally {
-      setIsAdding(false);
+      setIsEditing(false);
     }
   };
 
@@ -144,7 +130,6 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
     }
   };
 
-  // Prefer server-side flag, fall back to client-side edit session if needed
   if (!canEdit) return null;
 
   return (
@@ -152,30 +137,22 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
       <button
         type="button"
         onClick={() => setIsFormOpen(true)}
-        disabled={isAdding}
+        disabled={isEditing}
         className={className}
         style={{
-          marginTop: compact ? 0 : "2rem",
-          padding: compact ? "0.75rem 1rem" : "1rem 2rem",
-          backgroundColor: "rgba(76, 175, 80, 0.1)",
-          border: "1px solid rgba(76, 175, 80, 0.3)",
+          padding: compact ? "0.45rem 0.7rem" : "0.55rem 0.9rem",
           borderRadius: "8px",
-          color: "#4CAF50",
+          border: "1px solid rgba(100, 150, 255, 0.4)",
+          backgroundColor: "rgba(100, 150, 255, 0.12)",
+          color: "rgb(150, 180, 255)",
           cursor: "pointer",
-          fontSize: compact ? "0.875rem" : "1rem",
+          fontSize: compact ? "0.75rem" : "0.85rem",
           fontWeight: "600",
           transition: "all 0.2s",
-          whiteSpace: "nowrap",
           ...style,
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = "rgba(76, 175, 80, 0.2)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "rgba(76, 175, 80, 0.1)";
-        }}
       >
-        {label}
+        Edit
       </button>
 
       {isMounted && isFormOpen && createPortal(
@@ -204,7 +181,7 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
               padding: "1rem",
             }}
           >
-            <h3 style={{ marginBottom: "0.75rem" }}>Add New Project</h3>
+            <h3 style={{ marginBottom: "0.75rem" }}>Edit Project</h3>
             <div style={{ display: "grid", gap: "0.65rem" }}>
               <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Project title" style={{ padding: "0.6rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.22)", background: "rgba(255,255,255,0.06)", color: "inherit" }} />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.65rem" }}>
@@ -248,11 +225,11 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
               </button>
               <button
                 type="button"
-                onClick={() => void handleCreateProject()}
-                disabled={isAdding || !title.trim()}
-                style={{ padding: "0.55rem 0.9rem", borderRadius: "8px", border: "1px solid rgba(76, 175, 80, 0.35)", background: "rgba(76, 175, 80, 0.15)", color: "#6fda83" }}
+                onClick={() => void handleUpdateProject()}
+                disabled={isEditing || !title.trim()}
+                style={{ padding: "0.55rem 0.9rem", borderRadius: "8px", border: "1px solid rgba(100, 150, 255, 0.35)", background: "rgba(100, 150, 255, 0.15)", color: "#96b4ff" }}
               >
-                {isAdding ? "Creating..." : "Create Project"}
+                {isEditing ? "Updating..." : "Update Project"}
               </button>
             </div>
           </div>

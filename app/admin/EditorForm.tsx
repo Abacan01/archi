@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { IconTrash, IconPlus, IconLayers, IconUpload } from "./icons";
+import { auth } from "../../lib/firebase/client";
 
 interface EditorFormProps {
   data: any;
@@ -11,6 +12,53 @@ interface EditorFormProps {
 
 export function EditorForm({ data, onChange, onUploadRequest }: EditorFormProps) {
   const [activeTab, setActiveTab] = useState<string>(Object.keys(data || {})[0] || "");
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingUploadCallback = useRef<((url: string) => void) | null>(null);
+  const pendingUploadPath = useRef<string | null>(null);
+
+  const triggerInternalUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!auth?.currentUser) {
+      console.error("Must be signed in to upload images.");
+      return;
+    }
+
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`/api/cloudinary/upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: formData,
+      });
+
+      const payload = await res.json();
+      if (!res.ok || !payload?.secureUrl) {
+        throw new Error(payload?.error || "Upload failed");
+      }
+
+      // call the pending callback (either EditorForm user-provided or the field onChange)
+      if (pendingUploadCallback.current) {
+        pendingUploadCallback.current(payload.secureUrl);
+      }
+    } catch (err) {
+      console.error("Image upload failed:", err);
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      pendingUploadCallback.current = null;
+      pendingUploadPath.current = null;
+    }
+  };
 
   if (!data || typeof data !== "object") return null;
 
@@ -32,12 +80,25 @@ export function EditorForm({ data, onChange, onUploadRequest }: EditorFormProps)
       </div>
       <div className="admin-editor-content">
         {activeTab && (
-          <ObjectEditor
-            value={data[activeTab]}
-            path={activeTab}
-            onChange={(newVal: any) => onChange({ ...data, [activeTab]: newVal })}
-            onUploadRequest={onUploadRequest}
-          />
+          <>
+            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />
+            <ObjectEditor
+              value={data[activeTab]}
+              path={activeTab}
+              onChange={(newVal: any) => onChange({ ...data, [activeTab]: newVal })}
+              onUploadRequest={(currentPath: string, cb: (url: string) => void) => {
+                // prefer consumer-provided handler if available
+                if (onUploadRequest) {
+                  onUploadRequest(currentPath, cb);
+                  return;
+                }
+                // otherwise use internal file chooser + upload flow
+                pendingUploadCallback.current = cb;
+                pendingUploadPath.current = currentPath;
+                triggerInternalUpload();
+              }}
+            />
+          </>
         )}
       </div>
     </div>

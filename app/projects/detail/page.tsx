@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getProjectBySlug, getSiteContent } from "../../../lib/content";
 import { SiteFooter } from "../../../components/site-footer";
 import { SiteHeader } from "../../../components/site-header";
+import { AddProjectButton } from "../../../components/add-project-button";
+import { RemoveProjectButton } from "../../../components/remove-project-button";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +20,9 @@ export default async function ProjectDetailPage({ searchParams }: PageProps) {
   const gallery = (project?.gallery || []).filter((item) => item.imageUrl);
   
   const editModeParam = searchParams?.editMode === "true" ? "?editMode=true" : "";
+  const isEditMode = searchParams?.editMode === "true";
+  const projects = siteContent.projectItems || [];
+  const projectIndex = project ? projects.findIndex((p) => p.slug === project.slug) : -1;
 
   return (
     <>
@@ -31,11 +36,19 @@ export default async function ProjectDetailPage({ searchParams }: PageProps) {
               <p className="eyebrow">Project Detail</p>
               <h2>{project?.title || "Project"}</h2>
             </div>
-            <p className="section-note">
-              {project?.category || ""}
-              {project?.year ? ` / ${project.year}` : ""}
-              {project?.status ? ` / ${project.status}` : ""}
-            </p>
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+              <p className="section-note" style={{ margin: 0 }}>
+                {project?.category || ""}
+                {project?.year ? ` / ${project.year}` : ""}
+                {project?.status ? ` / ${project.status}` : ""}
+              </p>
+              {isEditMode ? (
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <AddProjectButton isEditMode={true} compact label="+ Add New" />
+                  {projectIndex >= 0 ? <RemoveProjectButton index={projectIndex} title={project?.title} isEditMode={true} /> : null}
+                </div>
+              ) : null}
+            </div>
           </div>
 
           {!slug ? (

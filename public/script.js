@@ -45,54 +45,48 @@ window.addEventListener("scroll", () => {
   }
 });
 
-const revealEls = document.querySelectorAll(".reveal");
-const observer = typeof IntersectionObserver !== "undefined"
-  ? new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("in-view");
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.12 }
-  )
-  : null;
+window.addEventListener("load", () => {
+  const revealEls = document.querySelectorAll(".reveal");
+  const observer = typeof IntersectionObserver !== "undefined"
+    ? new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in-view");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    )
+    : null;
 
-revealEls.forEach((el) => {
-  const rect = el.getBoundingClientRect();
-  const isInInitialViewport = rect.top < window.innerHeight * 0.98 && rect.bottom > 0;
+  revealEls.forEach((el) => {
+    if (observer) {
+      observer.observe(el);
+    } else {
+      el.classList.add("in-view");
+    }
+  });
 
-  if (isInInitialViewport) {
-    el.classList.add("in-view");
-    return;
-  }
+  const textMotionTargets = Array.from(document.querySelectorAll(
+    ".hero-copy .eyebrow, .hero-copy h1, .hero-copy .lead, .hero-showcase-copy h2, .hero-showcase-copy p, .section-head .eyebrow, .section-head h2, .section-note, .strip article h2, .strip article p, .about-panel h3, .about-panel p, .service-card h3, .service-card p, .profile-card p, .status-guide-card h3, .status-guide-card p, .project-spotlight-copy h3, .project-spotlight-copy p, .contact-form label, .contact-card h3, .contact-card p"
+  )).filter((el) => !el.closest("[data-inline-editor=\"true\"]"));
 
-  if (observer) {
-    observer.observe(el);
-  } else {
-    el.classList.add("in-view");
-  }
-});
+  let motionIndex = 0;
 
-const textMotionTargets = Array.from(document.querySelectorAll(
-  ".hero-copy .eyebrow, .hero-copy h1, .hero-copy .lead, .hero-showcase-copy h2, .hero-showcase-copy p, .section-head .eyebrow, .section-head h2, .section-note, .strip article h2, .strip article p, .about-panel h3, .about-panel p, .service-card h3, .service-card p, .profile-card p, .status-guide-card h3, .status-guide-card p, .project-spotlight-copy h3, .project-spotlight-copy p, .contact-form label, .contact-card h3, .contact-card p"
-)).filter((el) => !el.closest("[data-inline-editor=\"true\"]"));
+  textMotionTargets.forEach((el) => {
+    if (el.classList.contains("motion-ready")) {
+      return;
+    }
 
-let motionIndex = 0;
+    const motionClass = motionIndex % 2 === 0 ? "text-motion-left" : "text-motion-right";
+    const motionDelay = Math.min(motionIndex * 45, 420);
 
-textMotionTargets.forEach((el) => {
-  if (el.classList.contains("motion-ready")) {
-    return;
-  }
-
-  const motionClass = motionIndex % 2 === 0 ? "text-motion-left" : "text-motion-right";
-  const motionDelay = Math.min(motionIndex * 45, 420);
-
-  el.classList.add("motion-ready", motionClass);
-  el.style.setProperty("--motion-delay", `${motionDelay}ms`);
-  motionIndex += 1;
+    el.classList.add("motion-ready", motionClass);
+    el.style.setProperty("--motion-delay", `${motionDelay}ms`);
+    motionIndex += 1;
+  });
 });
 
 const spotlightImage = document.getElementById("spotlightImage");

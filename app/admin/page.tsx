@@ -422,56 +422,7 @@ export default function AdminPage() {
       ) : null}
 
       {canEdit ? (
-        <section className="admin-cms-section">
-          <div className="admin-card">
-            <div className="admin-card-head">
-              <div>
-                <p className="admin-chip">Projects</p>
-                <h2>Manage Uploaded Projects</h2>
-                <p className="admin-note">Delete any project directly from the admin dashboard.</p>
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gap: "0.75rem", marginTop: "1rem" }}>
-              {Array.isArray(contentData?.projectItems) && contentData.projectItems.length > 0 ? (
-                contentData.projectItems.map((project: any, index: number) => (
-                  <div
-                    key={project.id || project.slug || project.title || index}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: "1rem",
-                      padding: "0.9rem 1rem",
-                      borderRadius: "12px",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      background: "rgba(255,255,255,0.04)",
-                    }}
-                  >
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ margin: 0, fontWeight: 700 }}>{project.title || "Untitled project"}</p>
-                      <p style={{ margin: "0.2rem 0 0", opacity: 0.75, fontSize: "0.9rem" }}>
-                        {project.category || "Uncategorized"} {project.status ? `• ${project.status}` : ""}
-                      </p>
-                    </div>
-                    <button
-                      className="btn btn-outline"
-                      type="button"
-                      onClick={() => void deleteProject(index, project.title)}
-                      disabled={isBusy}
-                      style={{ borderColor: "rgba(255,100,100,0.5)", color: "rgb(255,150,150)" }}
-                    >
-                      <IconTrash />
-                      Delete
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <p className="admin-note">No projects found yet.</p>
-              )}
-            </div>
-          </div>
-        </section>
+        <section className="admin-cms-section"></section>
       ) : null}
 
       {toast ? (

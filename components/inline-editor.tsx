@@ -82,6 +82,10 @@ export function InlineEditor({
     if (!isAdmin) return;
     e.preventDefault();
     e.stopPropagation();
+    if (typeof fileInputRef.current?.showPicker === "function") {
+      fileInputRef.current.showPicker();
+      return;
+    }
     fileInputRef.current?.click();
   };
 
@@ -155,7 +159,6 @@ export function InlineEditor({
       <div
         className={`inline-image-editor ${className || ""}`}
         data-inline-editor="true"
-        onClick={handleImageClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{
@@ -172,6 +175,28 @@ export function InlineEditor({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={resolvedValue} alt="Editable" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" as any }} />
+        {isHovered && !isUploading && (
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "auto" }}>
+            <button
+              type="button"
+              onClick={handleImageClick}
+              style={{
+                padding: "0.4rem 0.75rem",
+                borderRadius: "999px",
+                border: "1px solid rgba(255,255,255,0.35)",
+                background: "rgba(0,0,0,0.55)",
+                color: "#fff",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                letterSpacing: "0.01em",
+                pointerEvents: "auto",
+                cursor: "pointer",
+              }}
+            >
+              Replace image
+            </button>
+          </div>
+        )}
         {isUploading && (
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.3)" }}>
             <span style={{ color: "#fff", fontSize: "0.8rem" }}>Uploading...</span>
