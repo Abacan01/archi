@@ -144,7 +144,9 @@ export function InlineEditor({
         style={{
           cursor: "pointer",
           position: "relative",
-          display: "inline-block",
+          display: "block",
+          width: "100%",
+          height: "100%",
           outline: isHovered ? "2px dashed rgba(255,255,255,0.5)" : "none",
           outlineOffset: "4px",
           transition: "outline 0.2s ease",
@@ -152,7 +154,7 @@ export function InlineEditor({
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={resolvedValue} alt="Editable" style={{ display: "block", width: "100%", height: "auto" }} />
+        <img src={resolvedValue} alt="Editable" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" as any }} />
         {isUploading && (
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.3)" }}>
             <span style={{ color: "#fff", fontSize: "0.8rem" }}>Uploading...</span>

@@ -12,7 +12,7 @@ interface ArrayEditorButtonProps {
   newItemTemplate?: Record<string, any>;
 }
 
-export function ArrayEditorButton({ path, label, newItemTemplate = "" }: ArrayEditorButtonProps) {
+export function ArrayEditorButton({ path, label, newItemTemplate = {} }: ArrayEditorButtonProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
 
