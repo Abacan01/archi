@@ -12,8 +12,8 @@ if (!existsSync(sourceFile)) {
 }
 
 if (!existsSync(outputDir)) {
-  console.error("Static export folder 'out' not found. Run the build first.");
-  process.exit(1);
+  console.warn("Static export folder 'out' not found; skipping .htaccess copy.");
+  process.exit(0);
 }
 
 copyFileSync(sourceFile, targetFile);

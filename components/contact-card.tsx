@@ -3,6 +3,8 @@
 import { InlineEditor } from "./inline-editor";
 import { ArrayItemRemoveButton } from "./array-editor-button";
 import type { ContactContent } from "../lib/content-types";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "../lib/firebase/client";
 
 interface ContactCardProps {
   contact: ContactContent;
@@ -56,7 +58,6 @@ export function ContactCard({ contact, isEditMode }: ContactCardProps) {
           <button
             type="button"
             onClick={async () => {
-              const { db, doc, updateDoc, getDoc } = await import("firebase/firestore");
               if (!db) return;
               const contentSnap = await getDoc(doc(db, "siteContent", "main"));
               if (!contentSnap.exists()) return;
@@ -85,7 +86,6 @@ export function ContactCard({ contact, isEditMode }: ContactCardProps) {
           <button
             type="button"
             onClick={async () => {
-              const { db, doc, updateDoc, getDoc } = await import("firebase/firestore");
               if (!db) return;
               const contentSnap = await getDoc(doc(db, "siteContent", "main"));
               if (!contentSnap.exists()) return;

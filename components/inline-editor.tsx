@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { auth, db, storage } from "../lib/firebase/client";
+import { auth, db } from "../lib/firebase/client";
 import { useEditSession } from "./edit-session-provider";
 import { setNestedValue } from "../lib/editor-path";
 
@@ -70,11 +69,12 @@ export function InlineEditor({
     const updatedData = setNestedValue(snap.data(), path, nextValue);
     await setDoc(contentRef, updatedData, { merge: false });
 
+    const author = auth?.currentUser?.email || auth?.currentUser?.uid || "Admin (Inline Edit)";
     const historyRef = doc(collection(db, "siteHistory"));
     await setDoc(historyRef, {
       timestamp: serverTimestamp(),
       data: updatedData,
-      author: auth.currentUser?.email || auth.currentUser?.uid || "Admin (Inline Edit)",
+      author,
     });
   };
 
@@ -87,20 +87,36 @@ export function InlineEditor({
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !storage || !db) return;
+    if (!file || !db || !auth?.currentUser) return;
 
     setIsUploading(true);
     try {
-      const safeName = file.name.replace(/\s+/g, "-");
-      const storageRef = ref(storage, `site-content/${Date.now()}-${safeName}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      setValue(url);
-      await persistImmediateValue(url);
+      const idToken = await auth.currentUser.getIdToken();
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/cloudinary/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: formData,
+      });
+
+      const payload = await response.json();
+      if (!response.ok || !payload?.secureUrl) {
+        throw new Error(payload?.error || "Upload failed.");
+      }
+
+      setValue(payload.secureUrl);
+      await persistImmediateValue(payload.secureUrl);
       clearDraftValue(path);
     } catch (err) {
       console.error("Image upload failed:", err);
     } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       setIsUploading(false);
     }
   };
@@ -128,16 +144,17 @@ export function InlineEditor({
   if (!isAdmin) {
     if (type === "image") {
       // eslint-disable-next-line @next/next/no-img-element
-      return <img src={resolvedValue} alt="" className={className} id={id} />;
+      return <img src={resolvedValue} alt="" className={className} id={id} data-inline-editor="true" />;
     }
     if (!resolvedValue) return null;
-    return <Tag className={className} id={id} style={{ whiteSpace: multiline ? "pre-line" : "normal" }}>{resolvedValue}</Tag>;
+    return <Tag className={className} id={id} data-inline-editor="true" style={{ whiteSpace: multiline ? "pre-line" : "normal" }}>{resolvedValue}</Tag>;
   }
 
   if (type === "image") {
     return (
       <div
         className={`inline-image-editor ${className || ""}`}
+        data-inline-editor="true"
         onClick={handleImageClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -239,6 +256,7 @@ export function InlineEditor({
     <Tag
       className={className}
       id={id}
+      data-inline-editor="true"
       onClick={(e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();

@@ -1,4 +1,5 @@
 import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
+import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { getStorage, type Storage } from "firebase-admin/storage";
 
@@ -25,5 +26,6 @@ if (hasAdminConfig) {
 }
 
 export const isFirebaseAdminConfigured = Boolean(adminApp);
+export const adminAuth: Auth | null = adminApp ? getAuth(adminApp) : null;
 export const adminDb: Firestore | null = adminApp ? getFirestore(adminApp) : null;
 export const adminStorage: Storage | null = adminApp ? getStorage(adminApp) : null;

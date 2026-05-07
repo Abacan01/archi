@@ -76,9 +76,9 @@ revealEls.forEach((el) => {
   }
 });
 
-const textMotionTargets = document.querySelectorAll(
+const textMotionTargets = Array.from(document.querySelectorAll(
   ".hero-copy .eyebrow, .hero-copy h1, .hero-copy .lead, .hero-showcase-copy h2, .hero-showcase-copy p, .section-head .eyebrow, .section-head h2, .section-note, .strip article h2, .strip article p, .about-panel h3, .about-panel p, .service-card h3, .service-card p, .profile-card p, .status-guide-card h3, .status-guide-card p, .project-spotlight-copy h3, .project-spotlight-copy p, .contact-form label, .contact-card h3, .contact-card p"
-);
+)).filter((el) => !el.closest("[data-inline-editor=\"true\"]"));
 
 let motionIndex = 0;
 

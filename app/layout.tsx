@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Suspense } from "react";
 import "./globals.css";
 import { EditSessionProvider } from "../components/edit-session-provider";
 import { EditSessionToolbar } from "../components/edit-session-toolbar";
@@ -53,10 +54,12 @@ export default function RootLayout({
   }
 })();`}
         </Script>
-        <EditSessionProvider>
-          {children}
-          <EditSessionToolbar />
-        </EditSessionProvider>
+        <Suspense fallback={null}>
+          <EditSessionProvider>
+            {children}
+            <EditSessionToolbar />
+          </EditSessionProvider>
+        </Suspense>
         <SiteRuntimeScript />
       </body>
     </html>
