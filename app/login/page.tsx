@@ -24,7 +24,12 @@ export default function LoginPage() {
         setIsAdmin(false);
         return;
       }
-      const adminSnap = await getDoc(doc(db, "admins", current.uid));
+      const firestore = db;
+      if (!firestore) {
+        setIsAdmin(false);
+        return;
+      }
+      const adminSnap = await getDoc(doc(firestore, "admins", current.uid));
       const hasAdmin = adminSnap.exists();
       setIsAdmin(hasAdmin);
       if (hasAdmin) {

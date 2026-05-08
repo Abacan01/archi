@@ -51,7 +51,10 @@ export function EditProjectButton({ projectIndex, project, isEditMode, compact =
 
     const loadCategoryOptions = async () => {
       try {
-        const contentRef = doc(db, "siteContent", "main");
+        const firestore = db;
+        if (!firestore) return;
+
+        const contentRef = doc(firestore, "siteContent", "main");
         const contentSnap = await getDoc(contentRef);
         if (!contentSnap.exists()) return;
 

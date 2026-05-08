@@ -24,7 +24,13 @@ export function ArrayEditorButton({ path, label, newItemTemplate = {} }: ArrayEd
         return;
       }
       try {
-        const adminSnap = await getDoc(doc(db, "admins", current.uid));
+        const firestore = db;
+        if (!firestore) {
+          setIsAdmin(false);
+          return;
+        }
+
+        const adminSnap = await getDoc(doc(firestore, "admins", current.uid));
         setIsAdmin(adminSnap.exists());
       } catch (e) {
         setIsAdmin(false);
@@ -123,7 +129,13 @@ export function ArrayItemRemoveButton({ path, index }: ArrayItemRemoveButtonProp
         return;
       }
       try {
-        const adminSnap = await getDoc(doc(db, "admins", current.uid));
+        const firestore = db;
+        if (!firestore) {
+          setIsAdmin(false);
+          return;
+        }
+
+        const adminSnap = await getDoc(doc(firestore, "admins", current.uid));
         setIsAdmin(adminSnap.exists());
       } catch (e) {
         setIsAdmin(false);

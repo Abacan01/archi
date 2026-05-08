@@ -52,7 +52,10 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
 
     const loadCategoryOptions = async () => {
       try {
-        const contentRef = doc(db, "siteContent", "main");
+        const firestore = db;
+        if (!firestore) return;
+
+        const contentRef = doc(firestore, "siteContent", "main");
         const contentSnap = await getDoc(contentRef);
         if (!contentSnap.exists()) return;
 
