@@ -254,7 +254,7 @@ export function InlineEditor({
         contentEditable
         suppressContentEditableWarning
         spellCheck={false}
-        onInput={(e) => {
+        onInput={(e: React.FormEvent<HTMLElement>) => {
           commitDraft((e.currentTarget.textContent || "").replace(/\u00A0/g, " "));
         }}
         onBlur={() => setIsEditing(false)}
