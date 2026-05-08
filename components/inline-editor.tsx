@@ -258,7 +258,7 @@ export function InlineEditor({
           commitDraft((e.currentTarget.textContent || "").replace(/\u00A0/g, " "));
         }}
         onBlur={() => setIsEditing(false)}
-        onKeyDown={(e) => {
+        onKeyDown={(e: React.KeyboardEvent<HTMLElement>) => {
           if (e.key === "Escape") {
             e.preventDefault();
             discardDraft();
