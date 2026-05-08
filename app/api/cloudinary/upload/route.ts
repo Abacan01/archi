@@ -6,6 +6,8 @@ export const runtime = "nodejs";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
+const allowPublicUploads = process.env.ALLOW_PUBLIC_UPLOADS === "true";
+
 function parseCloudinaryConfig() {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
   const apiKey = process.env.CLOUDINARY_API_KEY;
@@ -57,29 +59,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Cloudinary is not configured." }, { status: 500 });
   }
 
-  if (!isFirebaseAdminConfigured || !adminAuth || !adminDb) {
-    return NextResponse.json({ error: "Server auth is not configured." }, { status: 500 });
-  }
+  if (!allowPublicUploads) {
+    if (!isFirebaseAdminConfigured || !adminAuth || !adminDb) {
+      return NextResponse.json({ error: "Server auth is not configured." }, { status: 500 });
+    }
 
-  const authHeader = request.headers.get("authorization") || "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    const authHeader = request.headers.get("authorization") || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  }
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
 
-  let uid = "";
+    let uid = "";
 
-  try {
-    const decoded = await adminAuth.verifyIdToken(token);
-    uid = decoded.uid;
-  } catch {
-    return NextResponse.json({ error: "Invalid auth token." }, { status: 401 });
-  }
+    try {
+      const decoded = await adminAuth.verifyIdToken(token);
+      uid = decoded.uid;
+    } catch {
+      return NextResponse.json({ error: "Invalid auth token." }, { status: 401 });
+    }
 
-  const adminDoc = await adminDb.collection("admins").doc(uid).get();
-  if (!adminDoc.exists) {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+    const adminDoc = await adminDb.collection("admins").doc(uid).get();
+    if (!adminDoc.exists) {
+      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+    }
   }
 
   const formData = await request.formData();

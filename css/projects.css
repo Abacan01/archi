@@ -351,10 +351,7 @@
   font-size: 0.9375rem;
   overflow-wrap: anywhere;
   word-break: break-word;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-  overflow: hidden;
+  line-height: 1.6;
 }
 
 .spotlight-more-link {
@@ -491,24 +488,31 @@
   position: absolute;
   top: 0.75rem;
   left: 0.75rem;
-  z-index: 20;
+  z-index: 30;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
-  background: rgba(8, 18, 12, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(210, 173, 103, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.8);
   cursor: pointer;
   backdrop-filter: blur(6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.spotlight-select-toggle:hover {
+  background: rgba(210, 173, 103, 1);
+  border-color: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
 }
 
 .spotlight-select-input {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   cursor: pointer;
-  accent-color: #d2ad67;
+  accent-color: #082512;
 }
 
 .spotlight-selected-badge {

@@ -1,5 +1,3 @@
-import Image from "next/image";
-import Link from "next/link";
 import { getSiteContent } from "../../lib/content";
 import { defaultSiteContent } from "../../lib/content-defaults";
 import { SiteFooter } from "../../components/site-footer";
@@ -12,11 +10,6 @@ import { SpotlightEditGrid } from "../../components/spotlight-edit-grid";
 import type { ProjectItem, SpotlightPanel } from "../../lib/content-types";
 
 export const dynamic = "force-dynamic";
-
-function getStatusLabel(status: string | null | undefined) {
-  if (!status) return "Published";
-  return status;
-}
 
 type ProjectsPageProps = {
   searchParams?: { [key: string]: string | string[] };
@@ -31,7 +24,6 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
   const defaultProjectsContent = defaultSiteContent.projectsPage;
 
   const spotlight = content.spotlight || defaultProjectsContent.spotlight;
-  const filterLabels = content.filterLabels?.length ? content.filterLabels : defaultProjectsContent.filterLabels || [];
   const additionalPanels = [
     content.spotlightTwo,
     content.spotlightThree,
@@ -47,48 +39,6 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
       (panel.points && panel.points.length)
     )
   ));
-
-  const renderSpotlightPanel = (panel: SpotlightPanel, index: number) => {
-    const fallbackProject = projects[index] || projects[0];
-    const isImageRight = index % 2 === 0;
-    const panelPathPrefix = index === 0 ? "spotlight" : index === 1 ? "spotlightTwo" : index === 2 ? "spotlightThree" : "spotlightFour";
-
-    return (
-      <article className={`project-spotlight${isImageRight ? " is-image-right" : ""}`} aria-live="polite" key={`${panel.title || "panel"}-${index}`}>
-        <div className="project-spotlight-media" style={{ position: "relative", height: "100%" }}>
-          <Image
-            src={panel.imageUrl || fallbackProject?.coverImageUrl || "/assets/images/mckinley-west-residence.jpg"}
-            alt={panel.imageAlt || fallbackProject?.coverImageAlt || "Project image"}
-            fill
-            sizes="(max-width: 940px) 100vw, 55vw"
-            style={{ objectFit: "cover", objectPosition: "50% 50%" }}
-          />
-        </div>
-        <div className="project-spotlight-copy">
-          <div className="spotlight-heading">
-            <InlineEditor as="h3" path={`projectsPage.${panelPathPrefix}.title`} initialValue={panel.title || fallbackProject?.title || "Featured Architecture"} />
-            <InlineEditor as="p" className="spotlight-type" path={`projectsPage.${panelPathPrefix}.type`} initialValue={panel.type || fallbackProject?.category || "Residential"} />
-          </div>
-          <InlineEditor as="p" className="spotlight-description" path={`projectsPage.${panelPathPrefix}.description`} initialValue={panel.description || "Project details available on request."} multiline />
-          <div className="spotlight-points">
-            {(panel.points || []).map((point, pointIndex) => (
-              <InlineEditor key={`${point}-${index}`} as="span" path={`projectsPage.${panelPathPrefix}.points[${pointIndex}]`} initialValue={point} />
-            ))}
-          </div>
-          {panel.moreDetailsUrl && (
-            <a
-              className="spotlight-more-link"
-              href={panel.moreDetailsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              More Details
-            </a>
-          )}
-        </div>
-      </article>
-    );
-  };
 
   return (
     <>
@@ -114,30 +64,9 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
               />
               <BulkDeleteTrigger isEditMode={isEditMode} />
             </div>
-            <div className="project-filter-tabs" style={{ display: "none" }}>
-              {filterLabels.map((label, i) => {
-                const filterValue = i === 0 ? "all" : label.toLowerCase();
-                return (
-                  <button
-                    key={filterValue}
-                    className={`filter-tab ${i === 0 ? "active" : ""}`}
-                    data-filter={filterValue}
-                    aria-pressed={i === 0 ? "true" : "false"}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
           </div>
 
-          {!isEditMode ? (
-            <>
-              {spotlight && renderSpotlightPanel(spotlight, 0)}
-
-              {additionalPanels.map((panel, index) => renderSpotlightPanel(panel, index + 1))}
-            </>
-          ) : (
+          {isEditMode && (
             <SpotlightEditGrid spotlight={spotlight} additionalPanels={additionalPanels} projects={projects} />
           )}
 

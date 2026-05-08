@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { collection, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { db, auth } from "../lib/firebase/client";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import type { ProjectItem } from "../lib/content-types";
 import type { CSSProperties } from "react";
 import { useEditSession } from "./edit-session-provider";
@@ -25,9 +26,8 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
   const [categoryOptions, setCategoryOptions] = useState<string[]>(["Residential", "Commercial"]);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Residential");
-  const [projectCategories, setProjectCategories] = useState<string[]>(["Residential"]);
   const [newCategoryInput, setNewCategoryInput] = useState("");
-  const [status, setStatus] = useState("Residential");
+  const [status, setStatus] = useState("Published");
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [coverImageAlt, setCoverImageAlt] = useState("");
@@ -37,14 +37,36 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
   const [newTagInput, setNewTagInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const dropZoneRef = useRef<HTMLDivElement | null>(null);
+  const allowPublicUploads = process.env.NEXT_PUBLIC_ALLOW_PUBLIC_UPLOADS === "true";
   const router = useRouter();
   const session = useEditSession();
   const canEdit = Boolean(isEditMode || session?.isEditMode);
 
   useEffect(() => {
     setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!auth) {
+      setAuthUser(null);
+      setIsAuthReady(true);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setAuthUser(currentUser);
+      setIsAuthReady(true);
+      if (currentUser) {
+        setUploadMessage("");
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
@@ -104,14 +126,19 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
   };
 
   const uploadImage = async (file: File) => {
-    if (!auth?.currentUser) {
-      console.error("Must be signed in to upload images.");
+    if (!isAuthReady && !allowPublicUploads) {
+      return;
+    }
+
+    if (!authUser && !allowPublicUploads) {
+      setUploadMessage("Sign in to upload images.");
       return;
     }
 
     setIsUploading(true);
+    setUploadMessage("");
     try {
-      const idToken = await auth.currentUser.getIdToken();
+      const idToken = await authUser.getIdToken();
       const formData = new FormData();
       formData.append("file", file);
 
@@ -145,6 +172,8 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
       .replace(/\\s+/g, "-")
       .replace(/-+/g, "-");
 
+  const normalizeText = (value: string) => value.trim().toLowerCase();
+
   const handleCreateProject = async () => {
     if (isAdding || !canEdit) return;
     const safeTitle = title.trim();
@@ -156,7 +185,7 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
       const normalizedSlug = slugify(safeTitle) || `project-${Date.now()}`;
       const newProject: ProjectItem = {
         title: safeTitle,
-        category: (projectCategories.find(Boolean) || category || "Residential"),
+        category: category || "Residential",
         status: status || "Published",
         year: Number(year) || new Date().getFullYear(),
         slug: normalizedSlug,
@@ -164,7 +193,7 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
         descriptionText: descriptionText.trim(),
         coverImageUrl: coverImageUrl.trim() || "",
         coverImageAlt: coverImageAlt.trim() || `${safeTitle} cover image`,
-        tags: tags.filter(Boolean),
+        tags: tags.filter((tag) => normalizeText(tag) && normalizeText(tag) !== normalizeText(category || "Residential")),
         gallery: [],
       };
 
@@ -174,7 +203,7 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
       setIsFormOpen(false);
       setTitle("");
       setCategory("Residential");
-      setStatus("Residential");
+      setStatus("Published");
       setYear(String(new Date().getFullYear()));
       setCoverImageUrl("");
       setCoverImageAlt("");
@@ -182,7 +211,6 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
       setLocation("");
       setTags([]);
       setNewTagInput("");
-      setProjectCategories(["Residential"]);
     } catch (error) {
       console.error("Failed to add project:", error);
     } finally {
@@ -248,14 +276,19 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!auth?.currentUser) {
-      console.error("Must be signed in to upload images.");
+    if (!isAuthReady && !allowPublicUploads) {
+      return;
+    }
+
+    if (!authUser && !allowPublicUploads) {
+      setUploadMessage("Sign in to upload images.");
       return;
     }
 
     setIsUploading(true);
+    setUploadMessage("");
     try {
-      const idToken = await auth.currentUser.getIdToken();
+      const idToken = await authUser.getIdToken();
       const formData = new FormData();
       formData.append("file", file);
 
@@ -380,8 +413,8 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
                 <div style={{ display: "grid", gap: "0.4rem" }}>
                   <label style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.7)" }}>Type</label>
                   <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
                     style={{
                       padding: "0.6rem",
                       borderRadius: "8px",
@@ -483,7 +516,8 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
                   display: "grid",
                   placeItems: "center",
                   minHeight: "200px",
-                  cursor: "pointer",
+                  cursor: allowPublicUploads || (isAuthReady && authUser) ? "pointer" : "not-allowed",
+                  opacity: allowPublicUploads || (isAuthReady && authUser) ? 1 : 0.8,
                   transition: "all 0.2s",
                   textAlign: "center",
                   overflow: "hidden",
@@ -552,30 +586,40 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
                       <p style={{ margin: "0", fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
                         or
                       </p>
+                      <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", color: "rgba(255,255,255,0.6)" }}>
+                        {allowPublicUploads ? "Choose an image from your device." : (isAuthReady && !authUser ? "Sign in to upload images." : "Choose an image from your device.")}
+                      </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => fileInputRef?.current?.click()}
+                      disabled={!(allowPublicUploads || (isAuthReady && authUser)) || isUploading}
                       style={{
                         padding: "0.5rem 1rem",
                         borderRadius: "6px",
                         border: "1px solid rgba(76, 175, 80, 0.35)",
                         background: "rgba(76, 175, 80, 0.15)",
                         color: "#6fda83",
-                        cursor: "pointer",
+                        cursor: !(allowPublicUploads || (isAuthReady && authUser)) || isUploading ? "not-allowed" : "pointer",
                         fontWeight: "600",
                         fontSize: "0.9rem",
                         transition: "all 0.2s",
+                        opacity: !(allowPublicUploads || (isAuthReady && authUser)) || isUploading ? 0.65 : 1,
                       }}
                       onMouseEnter={(e) => {
+                        if (!(allowPublicUploads || (isAuthReady && authUser)) || isUploading) return;
                         e.currentTarget.style.background = "rgba(76, 175, 80, 0.25)";
                       }}
                       onMouseLeave={(e) => {
+                        if (!(allowPublicUploads || (isAuthReady && authUser)) || isUploading) return;
                         e.currentTarget.style.background = "rgba(76, 175, 80, 0.15)";
                       }}
                     >
                       {isUploading ? "Uploading..." : "Choose image"}
                     </button>
+                    {uploadMessage ? (
+                      <p style={{ margin: "0.25rem 0 0", fontSize: "0.82rem", color: "#ffb4b4" }}>{uploadMessage}</p>
+                    ) : null}
                   </div>
                 )}
                 <input 
@@ -604,10 +648,10 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
               <button
                 type="button"
                 onClick={() => void handleCreateProject()}
-                disabled={isAdding || !title.trim()}
+                disabled={isAdding || isUploading || !title.trim()}
                 style={{ padding: "0.55rem 0.9rem", borderRadius: "8px", border: "1px solid rgba(76, 175, 80, 0.35)", background: "rgba(76, 175, 80, 0.15)", color: "#6fda83" }}
               >
-                {isAdding ? "Creating..." : "Create Project"}
+                {isAdding ? "Creating..." : isUploading ? "Uploading..." : "Create Project"}
               </button>
             </div>
           </div>

@@ -153,6 +153,10 @@ export function InlineEditor({
     const element = editorRef.current;
     if (!element) return;
 
+    // Set initial text content when editing starts
+    element.textContent = resolvedValue;
+
+    // Focus and place cursor at the end
     const selection = window.getSelection();
     const range = document.createRange();
     range.selectNodeContents(element);
@@ -160,7 +164,7 @@ export function InlineEditor({
     selection?.removeAllRanges();
     selection?.addRange(range);
     element.focus();
-  }, [isEditing]);
+  }, [isEditing, resolvedValue]);
 
   const commitDraft = (nextValue: string) => {
     setValue(nextValue);
@@ -255,7 +259,8 @@ export function InlineEditor({
         suppressContentEditableWarning
         spellCheck={false}
         onInput={(e: React.FormEvent<HTMLElement>) => {
-          commitDraft((e.currentTarget.textContent || "").replace(/\u00A0/g, " "));
+          const textContent = (e.currentTarget.textContent || "").replace(/\u00A0/g, " ");
+          commitDraft(textContent);
         }}
         onBlur={() => setIsEditing(false)}
         onKeyDown={(e: React.KeyboardEvent<HTMLElement>) => {
@@ -274,9 +279,7 @@ export function InlineEditor({
           cursor: "text",
           whiteSpace: multiline ? "pre-wrap" : "inherit",
         }}
-      >
-        {value || "Click to add text"}
-      </Tag>
+      />
     );
   }
 

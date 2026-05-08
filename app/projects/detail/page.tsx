@@ -5,6 +5,7 @@ import { SiteFooter } from "../../../components/site-footer";
 import { SiteHeader } from "../../../components/site-header";
 import { AddProjectButton } from "../../../components/add-project-button";
 import { RemoveProjectButton } from "../../../components/remove-project-button";
+import { GalleryView } from "../../../components/gallery-view";
 
 export const dynamic = "force-dynamic";
 
@@ -88,17 +89,8 @@ export default async function ProjectDetailPage({ searchParams }: PageProps) {
               </article>
 
               {gallery.length > 0 ? (
-                <div className="project-grid" style={{ marginTop: "1rem" }}>
-                  {gallery.map((item, index) => (
-                    <article className="project-card" key={`${project.slug || project.title}-gallery-${index}`}>
-                      <Image
-                        src={item.imageUrl || "/assets/images/lgv.avif"}
-                        alt={item.imageAlt || `${project.title} gallery ${index + 1}`}
-                        width={960}
-                        height={640}
-                      />
-                    </article>
-                  ))}
+                <div style={{ marginTop: "1rem" }}>
+                  <GalleryView items={gallery} />
                 </div>
               ) : null}
             </>

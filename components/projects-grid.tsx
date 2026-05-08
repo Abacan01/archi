@@ -8,7 +8,7 @@ import { collection, doc, getDoc, serverTimestamp, setDoc } from "firebase/fires
 import { db } from "../lib/firebase/client";
 import { InlineEditor } from "./inline-editor";
 import { EditProjectButton } from "./edit-project-button";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useEditSession } from "./edit-session-provider";
 import type { ProjectItem } from "../lib/content-types";
 
@@ -22,7 +22,182 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
   const canEdit = Boolean(isEditMode || session?.isEditMode);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [tagEditingIndex, setTagEditingIndex] = useState<number | null>(null);
+  const [newTagInputs, setNewTagInputs] = useState<{ [key: number]: string }>({});
+  const [isSavingTags, setIsSavingTags] = useState<{ [key: number]: boolean }>({});
   const router = useRouter();
+
+  const normalizeText = (value: string) => value.trim().toLowerCase();
+
+  const isPendingProject = (projectIndex: number): boolean => {
+    return projectIndex >= projects.length;
+  };
+
+  const getPendingProjectIndex = (projectIndex: number): number => {
+    return projectIndex - projects.length;
+  };
+
+  const handleRemoveTag = async (projectIndex: number, tagToRemove: string) => {
+    if (!canEdit) return;
+
+    setIsSavingTags((prev) => ({ ...prev, [projectIndex]: true }));
+
+    try {
+      // Handle pending (newly added) projects
+      if (isPendingProject(projectIndex)) {
+        const pendingIdx = getPendingProjectIndex(projectIndex);
+        const pendingOp = session?.pendingProjectOps?.[pendingIdx];
+        
+        if (pendingOp && (pendingOp.type === "add" || pendingOp.type === "edit")) {
+          const updatedProject = {
+            ...pendingOp.project,
+            tags: (pendingOp.project.tags || []).filter((tag: string) => tag !== tagToRemove),
+          };
+          
+          session?.addPendingProjectOperation({
+            type: pendingOp.type,
+            project: updatedProject,
+            ...(pendingOp.type === "edit" ? { index: pendingOp.index } : {}),
+          });
+        }
+        return;
+      }
+
+      // Handle saved projects
+      if (!db) return;
+
+      const contentRef = doc(db, "siteContent", "main");
+      const contentSnap = await getDoc(contentRef);
+      if (!contentSnap.exists()) return;
+
+      const data = contentSnap.data();
+      let currentProjects = Array.isArray(data.projectItems) ? [...data.projectItems] : [];
+
+      if (projectIndex >= 0 && projectIndex < currentProjects.length) {
+        const project = currentProjects[projectIndex];
+        const updatedTags = (project.tags || []).filter((tag: string) => tag !== tagToRemove);
+        currentProjects[projectIndex] = { ...project, tags: updatedTags };
+
+        await setDoc(contentRef, {
+          ...data,
+          projectItems: currentProjects,
+        }, { merge: false });
+
+        const historyRef = doc(collection(db, "siteHistory"));
+        await setDoc(historyRef, {
+          timestamp: serverTimestamp(),
+          data: { ...data, projectItems: currentProjects },
+          author: "Admin (Remove Tag)",
+        });
+
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Failed to remove tag:", error);
+    } finally {
+      setIsSavingTags((prev) => ({ ...prev, [projectIndex]: false }));
+    }
+  };
+
+  const handleAddTag = async (projectIndex: number) => {
+    const newTag = (newTagInputs[projectIndex] || "").trim();
+    if (!newTag || !canEdit) return;
+
+    setIsSavingTags((prev) => ({ ...prev, [projectIndex]: true }));
+
+    try {
+      // Handle pending (newly added) projects
+      if (isPendingProject(projectIndex)) {
+        const pendingIdx = getPendingProjectIndex(projectIndex);
+        const pendingOp = session?.pendingProjectOps?.[pendingIdx];
+        
+        if (pendingOp && (pendingOp.type === "add" || pendingOp.type === "edit")) {
+          const existingTags = Array.isArray(pendingOp.project.tags) ? [...pendingOp.project.tags] : [];
+          
+          if (!existingTags.includes(newTag)) {
+            existingTags.push(newTag);
+            const updatedProject = {
+              ...pendingOp.project,
+              tags: existingTags,
+            };
+            
+            session?.addPendingProjectOperation({
+              type: pendingOp.type,
+              project: updatedProject,
+              ...(pendingOp.type === "edit" ? { index: pendingOp.index } : {}),
+            });
+            
+            setNewTagInputs((prev) => ({ ...prev, [projectIndex]: "" }));
+          }
+        }
+        return;
+      }
+
+      // Handle saved projects
+      if (!db) return;
+
+      const contentRef = doc(db, "siteContent", "main");
+      const contentSnap = await getDoc(contentRef);
+      if (!contentSnap.exists()) return;
+
+      const data = contentSnap.data();
+      let currentProjects = Array.isArray(data.projectItems) ? [...data.projectItems] : [];
+
+      if (projectIndex >= 0 && projectIndex < currentProjects.length) {
+        const project = currentProjects[projectIndex];
+        const existingTags = Array.isArray(project.tags) ? [...project.tags] : [];
+
+        if (!existingTags.includes(newTag)) {
+          existingTags.push(newTag);
+          currentProjects[projectIndex] = { ...project, tags: existingTags };
+
+          await setDoc(contentRef, {
+            ...data,
+            projectItems: currentProjects,
+          }, { merge: false });
+
+          const historyRef = doc(collection(db, "siteHistory"));
+          await setDoc(historyRef, {
+            timestamp: serverTimestamp(),
+            data: { ...data, projectItems: currentProjects },
+            author: "Admin (Add Tag)",
+          });
+
+          setNewTagInputs((prev) => ({ ...prev, [projectIndex]: "" }));
+          router.refresh();
+        }
+      }
+    } catch (error) {
+      console.error("Failed to add tag:", error);
+    } finally {
+      setIsSavingTags((prev) => ({ ...prev, [projectIndex]: false }));
+    }
+  };
+
+  // Merge pending project operations with existing projects for real-time display
+  const displayProjects = useMemo(() => {
+    if (!session?.pendingProjectOps || session.pendingProjectOps.length === 0) {
+      return projects;
+    }
+
+    let merged = [...projects];
+    
+    for (const op of session.pendingProjectOps) {
+      if (op.type === "add") {
+        merged.push(op.project);
+      } else if (op.type === "edit") {
+        if (op.index >= 0 && op.index < merged.length) {
+          merged[op.index] = op.project;
+        }
+      } else if (op.type === "delete") {
+        if (op.index >= 0 && op.index < merged.length) {
+          merged.splice(op.index, 1);
+        }
+      }
+    }
+    
+    return merged;
+  }, [projects, session?.pendingProjectOps]);
 
   const toggleSelect = (index: number) => {
     const next = new Set(selectedIndices);
@@ -115,8 +290,13 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
 
   return (
     <>
-      <div className="project-grid project-grid-panels">
-        {projects.map((project, index) => (
+      {displayProjects.length === 0 ? (
+        <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)", fontSize: "1rem" }}>
+          NO EXISTING PROJECT CREATED
+        </div>
+      ) : (
+        <div className="project-grid project-grid-panels">
+          {displayProjects.map((project, index) => (
           <div key={project.slug || project.title || project.id || String(index)} style={{ position: "relative" }}>
             {canEdit && (
               <div style={{ position: "absolute", top: "0.5rem", left: "0.5rem", display: "flex", gap: "0.5rem", zIndex: 10 }}>
@@ -138,6 +318,10 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
               className={`project-card project-card-display project-spotlight project-list-panel${index % 2 === 0 ? " is-image-right" : ""}`}
               data-type={(project.category || "").toLowerCase()}
               data-stage={project.status === "Completed" || project.status === "Sold" ? "accomplished" : "rendered"}
+              style={{
+                opacity: session?.pendingProjectOps?.some(op => op.type === "add" && op.project === project) ? 0.85 : 1,
+                border: session?.pendingProjectOps?.some(op => (op.type === "add" || op.type === "edit") && op.project === project) ? "2px solid rgba(76, 175, 80, 0.4)" : undefined,
+              }}
             >
               <div className="project-spotlight-media project-list-panel-media" style={{ position: "relative", height: "100%" }}>
                 {project.coverImageUrl ? (
@@ -154,17 +338,176 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
                   <InlineEditor as="p" className="spotlight-type" path={`projectItems[${index}].category`} initialValue={project.category || "Residential"} />
                 </div>
                 <InlineEditor as="p" className="spotlight-description" path={`projectItems[${index}].descriptionText`} initialValue={project.descriptionText || ""} multiline />
-                <div className="spotlight-points">
-                  <InlineEditor
-                    as="span"
-                    className={project.status === "Completed" || project.status === "Sold" ? "status-pill-accomplished" : "status-pill-rendered"}
-                    path={`projectItems[${index}].status`}
-                    initialValue={project.status || "Published"}
-                  />
-                  {!!project.location && (
-                    <InlineEditor as="span" path={`projectItems[${index}].location`} initialValue={project.location} />
+                <div className="spotlight-points" style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", alignItems: "center", marginBottom: "0.5rem" }}>
+                  {project.tags && project.tags.length > 0 && (
+                    <>
+                      {project.tags
+                        .filter((tag) => normalizeText(tag) && normalizeText(tag) !== normalizeText(project.category || ""))
+                        .map((tag, tagIdx) => (
+                          <span
+                            key={`tag-${tagIdx}`}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.4rem",
+                              padding: "0.3rem 0.6rem",
+                              borderRadius: "14px",
+                              border: "1px solid rgba(76, 175, 80, 0.35)",
+                              background: "rgba(76, 175, 80, 0.12)",
+                              color: "#6fda83",
+                              fontSize: "0.8rem",
+                              fontWeight: "500",
+                              whiteSpace: "nowrap",
+                              position: "relative",
+                            }}
+                          >
+                            {tag}
+                            {isEditMode && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveTag(index, tag)}
+                                disabled={isSavingTags[index]}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  width: "14px",
+                                  height: "14px",
+                                  padding: "0",
+                                  border: "none",
+                                  background: "rgba(255, 76, 76, 0.6)",
+                                  color: "#fff",
+                                  borderRadius: "50%",
+                                  cursor: isSavingTags[index] ? "not-allowed" : "pointer",
+                                  fontSize: "0.7rem",
+                                  fontWeight: "bold",
+                                  opacity: isSavingTags[index] ? 0.6 : 1,
+                                  transition: "all 0.2s",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isSavingTags[index]) {
+                                    e.currentTarget.style.background = "rgba(255, 76, 76, 0.8)";
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isSavingTags[index]) {
+                                    e.currentTarget.style.background = "rgba(255, 76, 76, 0.6)";
+                                  }
+                                }}
+                                title="Remove tag"
+                                aria-label={`Remove tag ${tag}`}
+                              >
+                                ×
+                              </button>
+                            )}
+                          </span>
+                        ))}
+                    </>
+                  )}
+                  {isEditMode && tagEditingIndex === index && (
+                    <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                      <input
+                        type="text"
+                        value={newTagInputs[index] || ""}
+                        onChange={(e) => setNewTagInputs((prev) => ({ ...prev, [index]: e.target.value }))}
+                        placeholder="new tag"
+                        disabled={isSavingTags[index]}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddTag(index);
+                          }
+                        }}
+                        style={{
+                          padding: "0.3rem 0.5rem",
+                          borderRadius: "6px",
+                          border: "1px solid rgba(76, 175, 80, 0.35)",
+                          background: "rgba(76, 175, 80, 0.08)",
+                          color: "#6fda83",
+                          fontSize: "0.8rem",
+                          outline: "none",
+                          opacity: isSavingTags[index] ? 0.6 : 1,
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleAddTag(index)}
+                        disabled={!newTagInputs[index]?.trim() || isSavingTags[index]}
+                        style={{
+                          padding: "0.3rem 0.6rem",
+                          borderRadius: "6px",
+                          border: "1px solid rgba(76, 175, 80, 0.35)",
+                          background: "rgba(76, 175, 80, 0.15)",
+                          color: "#6fda83",
+                          fontSize: "0.75rem",
+                          fontWeight: "600",
+                          cursor: !newTagInputs[index]?.trim() || isSavingTags[index] ? "not-allowed" : "pointer",
+                          opacity: !newTagInputs[index]?.trim() || isSavingTags[index] ? 0.6 : 1,
+                          transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (newTagInputs[index]?.trim() && !isSavingTags[index]) {
+                            e.currentTarget.style.background = "rgba(76, 175, 80, 0.25)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (newTagInputs[index]?.trim() && !isSavingTags[index]) {
+                            e.currentTarget.style.background = "rgba(76, 175, 80, 0.15)";
+                          }
+                        }}
+                      >
+                        {isSavingTags[index] ? "..." : "Add"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTagEditingIndex(null);
+                          setNewTagInputs((prev) => ({ ...prev, [index]: "" }));
+                        }}
+                        disabled={isSavingTags[index]}
+                        style={{
+                          padding: "0.3rem 0.6rem",
+                          borderRadius: "6px",
+                          border: "1px solid rgba(255,255,255,0.22)",
+                          background: "rgba(255,255,255,0.08)",
+                          color: "inherit",
+                          fontSize: "0.75rem",
+                          cursor: "pointer",
+                          opacity: isSavingTags[index] ? 0.6 : 1,
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   )}
                 </div>
+                {isEditMode && tagEditingIndex !== index && (
+                  <button
+                    type="button"
+                    onClick={() => setTagEditingIndex(index)}
+                    style={{
+                      padding: "0.4rem 0.8rem",
+                      marginTop: "0.5rem",
+                      marginRight: "0.5rem",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(76, 175, 80, 0.35)",
+                      background: "rgba(76, 175, 80, 0.12)",
+                      color: "#6fda83",
+                      fontSize: "0.8rem",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(76, 175, 80, 0.2)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(76, 175, 80, 0.12)";
+                    }}
+                  >
+                    + Add new tags
+                  </button>
+                )}
                 {isEditMode && (
                   <div style={{ marginTop: "1rem", display: "flex", justifyContent: "flex-start", gap: "0.5rem" }}>
                     <EditProjectButton projectIndex={index} project={project} isEditMode={isEditMode} compact />
@@ -174,7 +517,8 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
             </article>
           </div>
         ))}
-      </div>
+        </div>
+      )}
     </>
   );
 }

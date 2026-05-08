@@ -3,6 +3,8 @@
 import React, { useState, useRef } from "react";
 import { IconTrash, IconPlus, IconLayers, IconUpload } from "./icons";
 import { auth } from "../../lib/firebase/client";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import { useEffect } from "react";
 
 interface EditorFormProps {
   data: any;
@@ -12,10 +14,31 @@ interface EditorFormProps {
 
 export function EditorForm({ data, onChange, onUploadRequest }: EditorFormProps) {
   const [activeTab, setActiveTab] = useState<string>(Object.keys(data || {})[0] || "");
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pendingUploadCallback = useRef<((url: string) => void) | null>(null);
   const pendingUploadPath = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!auth) {
+      setAuthUser(null);
+      setIsAuthReady(true);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setAuthUser(currentUser);
+      setIsAuthReady(true);
+      if (currentUser) {
+        setUploadMessage("");
+      }
+    });
+
+    return unsubscribe;
+  }, []);
 
   const triggerInternalUpload = () => {
     fileInputRef.current?.click();
@@ -24,13 +47,17 @@ export function EditorForm({ data, onChange, onUploadRequest }: EditorFormProps)
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!auth?.currentUser) {
-      console.error("Must be signed in to upload images.");
+    if (!isAuthReady) {
+      return;
+    }
+
+    if (!authUser) {
+      setUploadMessage("Sign in to upload images.");
       return;
     }
 
     try {
-      const idToken = await auth.currentUser.getIdToken();
+      const idToken = await authUser.getIdToken();
       const formData = new FormData();
       formData.append("file", file);
 
@@ -82,6 +109,7 @@ export function EditorForm({ data, onChange, onUploadRequest }: EditorFormProps)
         {activeTab && (
           <>
             <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />
+            {uploadMessage ? <p className="admin-upload-message">{uploadMessage}</p> : null}
             <ObjectEditor
               value={data[activeTab]}
               path={activeTab}

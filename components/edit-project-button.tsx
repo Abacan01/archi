@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { collection, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { db, auth } from "../lib/firebase/client";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import type { ProjectItem } from "../lib/content-types";
 import type { CSSProperties } from "react";
 import { useEditSession } from "./edit-session-provider";
@@ -26,7 +27,7 @@ export function EditProjectButton({ projectIndex, project, isEditMode, compact =
   const [categoryOptions, setCategoryOptions] = useState<string[]>(["Residential", "Commercial"]);
   const [title, setTitle] = useState(project.title || "");
   const [category, setCategory] = useState(project.category || "Residential");
-  const [status, setStatus] = useState(project.status || "Residential");
+  const [status, setStatus] = useState(project.status || "Published");
   const [year, setYear] = useState(String(project.year || new Date().getFullYear()));
   const [coverImageUrl, setCoverImageUrl] = useState(project.coverImageUrl || "");
   const [coverImageAlt, setCoverImageAlt] = useState(project.coverImageAlt || "");
@@ -36,14 +37,37 @@ export function EditProjectButton({ projectIndex, project, isEditMode, compact =
   const [newTagInput, setNewTagInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const dropZoneRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const session = useEditSession();
   const canEdit = Boolean(isEditMode || session?.isEditMode);
 
+  const normalizeText = (value: string) => value.trim().toLowerCase();
+
   useEffect(() => {
     setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!auth) {
+      setAuthUser(null);
+      setIsAuthReady(true);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setAuthUser(currentUser);
+      setIsAuthReady(true);
+      if (currentUser) {
+        setUploadMessage("");
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
@@ -107,14 +131,19 @@ export function EditProjectButton({ projectIndex, project, isEditMode, compact =
   };
 
   const uploadImage = async (file: File) => {
-    if (!auth?.currentUser) {
-      console.error("Must be signed in to upload images.");
+    if (!isAuthReady) {
+      return;
+    }
+
+    if (!authUser) {
+      setUploadMessage("Sign in to upload images.");
       return;
     }
 
     setIsUploading(true);
+    setUploadMessage("");
     try {
-      const idToken = await auth.currentUser.getIdToken();
+      const idToken = await authUser.getIdToken();
       const formData = new FormData();
       formData.append("file", file);
 
@@ -152,13 +181,13 @@ export function EditProjectButton({ projectIndex, project, isEditMode, compact =
         ...project,
         title: safeTitle,
         category: category || "Residential",
-        status: status || "Residential",
+        status: status || project.status || "Published",
         year: Number(year) || new Date().getFullYear(),
         location: location.trim(),
         descriptionText: descriptionText.trim(),
         coverImageUrl: coverImageUrl.trim() || "",
         coverImageAlt: coverImageAlt.trim() || `${safeTitle} cover image`,
-        tags: tags.filter(Boolean),
+        tags: tags.filter((tag) => normalizeText(tag) && normalizeText(tag) !== normalizeText(category || "Residential")),
       };
 
       // Queue the operation instead of saving immediately
@@ -175,14 +204,19 @@ export function EditProjectButton({ projectIndex, project, isEditMode, compact =
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!auth?.currentUser) {
-      console.error("Must be signed in to upload images.");
+    if (!isAuthReady) {
+      return;
+    }
+
+    if (!authUser) {
+      setUploadMessage("Sign in to upload images.");
       return;
     }
 
     setIsUploading(true);
+    setUploadMessage("");
     try {
-      const idToken = await auth.currentUser.getIdToken();
+      const idToken = await authUser.getIdToken();
       const formData = new FormData();
       formData.append("file", file);
 
@@ -352,8 +386,8 @@ export function EditProjectButton({ projectIndex, project, isEditMode, compact =
                 <div style={{ display: "grid", gap: "0.4rem" }}>
                   <label style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.7)" }}>Type</label>
                   <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
                     style={{
                       padding: "0.6rem",
                       borderRadius: "8px",
@@ -455,7 +489,8 @@ export function EditProjectButton({ projectIndex, project, isEditMode, compact =
                   display: "grid",
                   placeItems: "center",
                   minHeight: "200px",
-                  cursor: "pointer",
+                  cursor: isAuthReady && authUser ? "pointer" : "not-allowed",
+                  opacity: isAuthReady && authUser ? 1 : 0.8,
                   transition: "all 0.2s",
                   textAlign: "center",
                   overflow: "hidden",
@@ -524,30 +559,40 @@ export function EditProjectButton({ projectIndex, project, isEditMode, compact =
                       <p style={{ margin: "0", fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
                         or
                       </p>
+                      <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", color: "rgba(255,255,255,0.6)" }}>
+                        {isAuthReady && !authUser ? "Sign in to upload images." : "Choose an image from your device."}
+                      </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => fileInputRef?.current?.click()}
+                      disabled={!isAuthReady || !authUser || isUploading}
                       style={{
                         padding: "0.5rem 1rem",
                         borderRadius: "6px",
                         border: "1px solid rgba(76, 175, 80, 0.35)",
                         background: "rgba(76, 175, 80, 0.15)",
                         color: "#6fda83",
-                        cursor: "pointer",
+                        cursor: !isAuthReady || !authUser || isUploading ? "not-allowed" : "pointer",
                         fontWeight: "600",
                         fontSize: "0.9rem",
                         transition: "all 0.2s",
+                        opacity: !isAuthReady || !authUser || isUploading ? 0.65 : 1,
                       }}
                       onMouseEnter={(e) => {
+                        if (!isAuthReady || !authUser || isUploading) return;
                         e.currentTarget.style.background = "rgba(76, 175, 80, 0.25)";
                       }}
                       onMouseLeave={(e) => {
+                        if (!isAuthReady || !authUser || isUploading) return;
                         e.currentTarget.style.background = "rgba(76, 175, 80, 0.15)";
                       }}
                     >
                       {isUploading ? "Uploading..." : "Choose image"}
                     </button>
+                    {uploadMessage ? (
+                      <p style={{ margin: "0.25rem 0 0", fontSize: "0.82rem", color: "#ffb4b4" }}>{uploadMessage}</p>
+                    ) : null}
                   </div>
                 )}
                 <input 

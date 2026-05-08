@@ -15,11 +15,12 @@ type PendingProjectOperation =
 type EditSessionContextValue = {
   isEditMode: boolean;
   pendingChangeCount: number;
+  pendingProjectOps: PendingProjectOperation[];
   getDraftValue: (path: string, fallback?: string | null) => string;
   setDraftValue: (path: string, value: string) => void;
   clearDraftValue: (path: string) => void;
   addPendingProjectOperation: (operation: PendingProjectOperation) => void;
-  cancelAllDrafts: () => void;
+  cancelAllDrafts: () => Promise<void>;
   saveAllDrafts: () => Promise<number>;
 };
 
@@ -130,6 +131,7 @@ export function EditSessionProvider({ children }: { children: ReactNode }) {
   const value = useMemo<EditSessionContextValue>(() => ({
     isEditMode,
     pendingChangeCount: Object.keys(drafts).length + pendingProjectOps.length,
+    pendingProjectOps,
     getDraftValue,
     setDraftValue,
     clearDraftValue,
@@ -148,11 +150,12 @@ export function useEditSession() {
   return {
     isEditMode: false,
     pendingChangeCount: 0,
+    pendingProjectOps: [],
     getDraftValue: (_path: string, fallback?: string | null) => fallback ?? "",
     setDraftValue: () => {},
     clearDraftValue: () => {},
     addPendingProjectOperation: () => {},
-    cancelAllDrafts: () => {},
+    cancelAllDrafts: async () => {},
     saveAllDrafts: async () => 0,
   } satisfies EditSessionContextValue;
 }

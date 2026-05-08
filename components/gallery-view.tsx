@@ -20,6 +20,7 @@ export function GalleryView({ items }: GalleryViewProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
+  const [hoveredGalleryIndex, setHoveredGalleryIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -281,8 +282,15 @@ export function GalleryView({ items }: GalleryViewProps) {
           {galleryItems.map((item, index) => {
             const isActive = index === activeIndex;
             const isSelected = selectedIndices.includes(index);
+            const isHovered = hoveredGalleryIndex === index;
             return (
-              <div key={`${item.src}-${index}`} className="gallery-thumb-shell">
+              <div
+                key={`${item.src}-${index}`}
+                className="gallery-thumb-shell"
+                style={{ position: "relative" }}
+                onMouseEnter={() => setHoveredGalleryIndex(index)}
+                onMouseLeave={() => setHoveredGalleryIndex(null)}
+              >
                 <button
                   className={isActive ? "gallery-thumb active" : "gallery-thumb"}
                   aria-label={`Show ${item.title}`}
@@ -292,6 +300,7 @@ export function GalleryView({ items }: GalleryViewProps) {
                   ref={(element) => {
                     thumbRefs.current[index] = element;
                   }}
+                  style={{ position: "relative" }}
                 >
                   <Image
                     src={item.src}
@@ -300,6 +309,44 @@ export function GalleryView({ items }: GalleryViewProps) {
                     sizes="96px"
                     className="gallery-thumb-image"
                   />
+                  {isHovered && canEdit && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "rgba(0, 0, 0, 0.4)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 5,
+                        borderRadius: "4px",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddPhotoClick();
+                        }}
+                        style={{
+                          padding: "0.4rem 0.8rem",
+                          background: "#4CAF50",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "0.75rem",
+                          fontWeight: 500,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Replace
+                      </button>
+                    </div>
+                  )}
                 </button>
                 {canEdit && (
                   <label className={isSelected ? "gallery-thumb-checkbox checked" : "gallery-thumb-checkbox"} title={`Select ${item.title} for removal`}>
