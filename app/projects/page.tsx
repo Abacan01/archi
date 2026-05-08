@@ -56,10 +56,16 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
                 label="+ Add New Project"
                 style={{
                   marginTop: 0,
-                  boxShadow: "0 14px 30px rgba(0, 0, 0, 0.28)",
-                  backgroundColor: "rgba(88, 126, 69, 0.95)",
+                  boxShadow: "0 6px 20px rgba(76, 175, 80, 0.25)",
+                  backgroundColor: "rgba(76, 175, 80, 0.9)",
                   color: "#fff",
-                  borderColor: "rgba(255,255,255,0.22)",
+                  borderColor: "rgba(255,255,255,0.25)",
+                  border: "1.5px solid rgba(255,255,255,0.25)",
+                  fontWeight: 700,
+                  fontSize: "0.95rem",
+                  letterSpacing: "0.3px",
+                  padding: "0.6rem 1.4rem",
+                  transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
               />
               <BulkDeleteTrigger isEditMode={isEditMode} />

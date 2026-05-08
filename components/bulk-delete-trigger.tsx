@@ -34,7 +34,31 @@ export default function BulkDeleteTrigger({ isEditMode }: Props) {
       type="button"
       onClick={handleClick}
       disabled={selectedCount === 0}
-      style={{ marginLeft: "0.5rem", padding: "0.45rem 0.9rem", borderRadius: "8px", border: "1px solid rgba(255,100,100,0.5)", background: "rgba(255,100,100,0.14)", color: "rgb(255,150,150)", cursor: "pointer", fontWeight: 600 }}
+      style={{
+        marginLeft: "0.5rem",
+        padding: "0.55rem 1.2rem",
+        borderRadius: "8px",
+        border: "1.5px solid rgba(255, 82, 82, 0.6)",
+        background: selectedCount === 0 ? "rgba(255,100,100,0.08)" : "rgba(255, 82, 82, 0.18)",
+        color: selectedCount === 0 ? "rgba(255,150,150,0.5)" : "#ff5252",
+        cursor: selectedCount === 0 ? "not-allowed" : "pointer",
+        fontWeight: 700,
+        fontSize: "0.95rem",
+        letterSpacing: "0.3px",
+        transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+        boxShadow: selectedCount === 0 ? "none" : "0 4px 12px rgba(255, 82, 82, 0.15)",
+        opacity: selectedCount === 0 ? 0.6 : 1,
+      }}
+      onMouseEnter={(e) => {
+        if (selectedCount > 0) {
+          e.currentTarget.style.background = "rgba(255, 82, 82, 0.23)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (selectedCount > 0) {
+          e.currentTarget.style.background = "rgba(255, 82, 82, 0.18)";
+        }
+      }}
     >
       {`Delete Selected (${selectedCount})`}
     </button>

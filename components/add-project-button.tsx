@@ -28,7 +28,6 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
   const [category, setCategory] = useState("Residential");
   const [newCategoryInput, setNewCategoryInput] = useState("");
   const [status, setStatus] = useState("Published");
-  const [year, setYear] = useState(String(new Date().getFullYear()));
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [coverImageAlt, setCoverImageAlt] = useState("");
   const [descriptionText, setDescriptionText] = useState("");
@@ -187,7 +186,7 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
         title: safeTitle,
         category: category || "Residential",
         status: status || "Published",
-        year: Number(year) || new Date().getFullYear(),
+        year: new Date().getFullYear(),
         slug: normalizedSlug,
         location: location.trim(),
         descriptionText: descriptionText.trim(),
@@ -204,7 +203,6 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
       setTitle("");
       setCategory("Residential");
       setStatus("Published");
-      setYear(String(new Date().getFullYear()));
       setCoverImageUrl("");
       setCoverImageAlt("");
       setDescriptionText("");
@@ -326,22 +324,30 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
         className={className}
         style={{
           marginTop: compact ? 0 : "2rem",
-          padding: compact ? "0.75rem 1rem" : "1rem 2rem",
+          padding: compact ? "0.6rem 1.2rem" : "1rem 2rem",
           backgroundColor: "rgba(76, 175, 80, 0.1)",
-          border: "1px solid rgba(76, 175, 80, 0.3)",
+          border: "1.5px solid rgba(76, 175, 80, 0.35)",
           borderRadius: "8px",
           color: "#4CAF50",
           cursor: "pointer",
-          fontSize: compact ? "0.875rem" : "1rem",
-          fontWeight: "600",
-          transition: "all 0.2s",
+          fontSize: compact ? "0.95rem" : "1rem",
+          fontWeight: "700",
+          transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
           whiteSpace: "nowrap",
+          letterSpacing: "0.2px",
           ...style,
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = "rgba(76, 175, 80, 0.2)";
+          if (style?.backgroundColor) {
+            // If custom color is provided (like from projects page), keep it vibrant on hover
+            return;
+          }
+          e.currentTarget.style.backgroundColor = "rgba(76, 175, 80, 0.15)";
         }}
         onMouseLeave={(e) => {
+          if (style?.backgroundColor) {
+            return;
+          }
           e.currentTarget.style.backgroundColor = "rgba(76, 175, 80, 0.1)";
         }}
       >
@@ -367,6 +373,7 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
               width: "min(640px, 100%)",
               maxHeight: "90vh",
               overflowY: "auto",
+              position: "relative",
               borderRadius: "14px",
               border: "1px solid rgba(255,255,255,0.16)",
               background: "rgba(22, 33, 21, 0.96)",
@@ -374,6 +381,27 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
               padding: "1rem",
             }}
           >
+            <button
+              type="button"
+              aria-label="Close add project form"
+              onClick={() => setIsFormOpen(false)}
+              style={{
+                position: "absolute",
+                top: "0.6rem",
+                right: "0.6rem",
+                width: "30px",
+                height: "30px",
+                borderRadius: "999px",
+                border: "1px solid rgba(255,255,255,0.25)",
+                background: "rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.9)",
+                fontSize: "1.1rem",
+                lineHeight: "1",
+                cursor: "pointer",
+              }}
+            >
+              ×
+            </button>
             <h3 style={{ marginBottom: "1.25rem" }}>Add new project</h3>
             <div style={{ display: "grid", gap: "1rem" }}>
               {/* Project Title */}
@@ -399,34 +427,23 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
                 />
               </div>
 
-              {/* Date Created & Type */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.65rem" }}>
-                <div style={{ display: "grid", gap: "0.4rem" }}>
-                  <label style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.7)" }}>Date Created</label>
-                  <input 
-                    value={year} 
-                    onChange={(e) => setYear(e.target.value)} 
-                    placeholder="" 
-                    style={{ padding: "0.6rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.22)", background: "rgba(255,255,255,0.06)", color: "inherit" }} 
-                  />
-                </div>
-                <div style={{ display: "grid", gap: "0.4rem" }}>
-                  <label style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.7)" }}>Type</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    style={{
-                      padding: "0.6rem",
-                      borderRadius: "8px",
-                      border: "1px solid rgba(255,255,255,0.22)",
-                      background: "rgba(255,255,255,0.06)",
-                      color: "#cfeadf",
-                    }}
-                  >
-                    <option value="Residential" style={{ color: "#0f3e2b", background: "#ffffff" }}>Residential</option>
-                    <option value="Commercial" style={{ color: "#0f3e2b", background: "#ffffff" }}>Commercial</option>
-                  </select>
-                </div>
+              {/* Type */}
+              <div style={{ display: "grid", gap: "0.4rem" }}>
+                <label style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.7)" }}>Type</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  style={{
+                    padding: "0.6rem",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(255,255,255,0.22)",
+                    background: "rgba(255,255,255,0.06)",
+                    color: "#cfeadf",
+                  }}
+                >
+                  <option value="Residential" style={{ color: "#0f3e2b", background: "#ffffff" }}>Residential</option>
+                  <option value="Commercial" style={{ color: "#0f3e2b", background: "#ffffff" }}>Commercial</option>
+                </select>
               </div>
 
               {/* Tags */}
