@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { useState, type MouseEvent } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState, type MouseEvent } from "react";
 import type { Brand, NavItem } from "../lib/content-types";
 
 type SiteHeaderProps = {
@@ -25,13 +25,23 @@ const defaultNavItems: NavItem[] = [
 
 export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const isEditMode = searchParams.get("editMode") === "true";
+  const [isEditMode, setIsEditMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const resolvedBrand = brand ?? defaultBrand;
   const items = navItems?.length ? navItems : defaultNavItems;
   const hasLogin = items.some((item) => item.href === "/login");
   let navLinks = hasLogin ? items : [...items, { href: "/login", label: "Login" }];
+
+  useEffect(() => {
+    const updateEditMode = () => {
+      setIsEditMode(window.location.search.includes("editMode=true"));
+    };
+
+    updateEditMode();
+    window.addEventListener("popstate", updateEditMode);
+    return () => window.removeEventListener("popstate", updateEditMode);
+  }, []);
+
   if (isEditMode) {
     navLinks = navLinks.filter((item) => item.href !== "/login");
   }

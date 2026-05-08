@@ -151,6 +151,7 @@ export function useEditSession() {
     getDraftValue: (_path: string, fallback?: string | null) => fallback ?? "",
     setDraftValue: () => {},
     clearDraftValue: () => {},
+    addPendingProjectOperation: () => {},
     cancelAllDrafts: () => {},
     saveAllDrafts: async () => 0,
   } satisfies EditSessionContextValue;
