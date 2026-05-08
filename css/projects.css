@@ -292,6 +292,11 @@
   backdrop-filter: blur(10px);
 }
 
+.spotlight-heading {
+  display: grid;
+  gap: 0.35rem;
+}
+
 .project-spotlight.is-swapping .project-spotlight-media,
 .project-spotlight.is-swapping .project-spotlight-copy {
   opacity: 0;
@@ -424,6 +429,10 @@
   gap: 1rem;
 }
 
+.project-grid-panels {
+  grid-template-columns: 1fr;
+}
+
 .project-card {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-md);
@@ -452,6 +461,74 @@
   transform: none;
   border-color: rgba(255, 255, 255, 0.12);
   box-shadow: var(--shadow-soft);
+}
+
+.project-list-panel {
+  margin-bottom: 0;
+  height: clamp(300px, 32vw, 350px);
+}
+
+.project-list-panel .project-spotlight-copy {
+  padding: 1.15rem;
+  gap: 0.6rem;
+}
+
+.project-list-panel .status-pill {
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+}
+
+.spotlight-edit-card {
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease, opacity 260ms ease;
+}
+
+.spotlight-edit-card.is-selected {
+  border-color: rgba(210, 173, 103, 0.78);
+  box-shadow: 0 0 0 1px rgba(210, 173, 103, 0.4), 0 20px 42px rgba(0, 0, 0, 0.34);
+}
+
+.spotlight-select-toggle {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(8, 18, 12, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+
+.spotlight-select-input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #d2ad67;
+}
+
+.spotlight-selected-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 20;
+  border: 1px solid rgba(210, 173, 103, 0.65);
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f2d59e;
+  background: rgba(22, 18, 10, 0.85);
+}
+
+.spotlight-edit-copy {
+  display: grid;
+  gap: 0.55rem;
 }
 
 .carousel-lightbox {
@@ -603,7 +680,7 @@
   transform: none;
 }
 
-.project-card div {
+.project-card > div:last-child {
   padding: 1.5rem;
 }
 
@@ -626,12 +703,12 @@
 
 .status-pill-rendered {
   color: #f2cb84;
-  font-weight: normal;
+  font-weight: 600;
 }
 
 .status-pill-accomplished {
   color: #99d9b1;
-  font-weight: normal;
+  font-weight: 600;
 }
 
 .mini-link {
@@ -647,6 +724,10 @@
 @media (max-width: 940px) {
   .project-spotlight {
     grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .project-list-panel {
     height: auto;
   }
 

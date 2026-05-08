@@ -33,36 +33,21 @@ export function SpotlightEditGrid({ spotlight, additionalPanels, projects }: Spo
         return (
           <article
             key={`${panel.title || "panel"}-${index}`}
-            className="project-card project-card-display"
+            className={`project-card project-card-display spotlight-edit-card${selected.has(index) ? " is-selected" : ""}`}
             style={{ position: "relative", overflow: "hidden" }}
           >
-            <label
-              style={{
-                position: "absolute",
-                top: "0.75rem",
-                left: "0.75rem",
-                zIndex: 20,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 22,
-                height: 22,
-                borderRadius: 6,
-                background: "rgba(0,0,0,0.35)",
-                border: "1px solid rgba(255,255,255,0.4)",
-                cursor: "pointer",
-              }}
-            >
+            <label className="spotlight-select-toggle">
               <input
                 type="checkbox"
                 checked={selected.has(index)}
                 onChange={() => toggle(index)}
-                style={{ width: 18, height: 18, cursor: "pointer" }}
+                className="spotlight-select-input"
                 aria-label={`Select spotlight card ${index + 1}`}
               />
             </label>
+            {selected.has(index) && <span className="spotlight-selected-badge">Selected</span>}
 
-            <div style={{ position: "relative", width: "100%", aspectRatio: "4 / 3", overflow: "hidden", background: "rgba(255,255,255,0.06)" }}>
+            <div className="spotlight-edit-media" style={{ position: "relative", width: "100%", aspectRatio: "4 / 3", overflow: "hidden", background: "rgba(255,255,255,0.06)" }}>
               <InlineEditor
                 type="image"
                 path={`projectsPage.${panelPathPrefix}.imageUrl`}
@@ -70,10 +55,10 @@ export function SpotlightEditGrid({ spotlight, additionalPanels, projects }: Spo
               />
             </div>
 
-            <div style={{ padding: "1rem" }}>
+            <div className="spotlight-edit-copy" style={{ padding: "1rem" }}>
               <InlineEditor
                 as="p"
-                className="tag"
+                className="spotlight-type"
                 path={`projectsPage.${panelPathPrefix}.type`}
                 initialValue={panel.type || fallbackProject?.category || "Residential"}
               />

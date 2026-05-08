@@ -98,6 +98,7 @@ export type ProjectItem = {
   descriptionText?: string | null;
   coverImageUrl?: string | null;
   coverImageAlt?: string | null;
+  tags?: string[];
   gallery?: Array<{ imageUrl?: string | null; imageAlt?: string | null }>;
 };
 

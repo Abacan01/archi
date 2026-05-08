@@ -33,8 +33,20 @@ export function InlineEditor({
   const [isHovered, setIsHovered] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLElement | null>(null);
 
   const resolvedValue = getDraftValue(path, initialValue);
+
+  const editorStyle = {
+    width: "100%",
+    display: "block",
+    background: "rgba(255,255,255,0.08)",
+    color: "inherit",
+    padding: multiline ? "0.45rem 0.5rem" : "0.2rem 0.35rem",
+    borderRadius: "4px",
+    border: "1px solid rgba(255,255,255,0.28)",
+    boxSizing: "border-box" as const,
+  };
 
   useEffect(() => {
     if (!isEditing) {
@@ -130,6 +142,20 @@ export function InlineEditor({
     setIsEditing(true);
   };
 
+  useEffect(() => {
+    if (!isEditing) return;
+    const element = editorRef.current;
+    if (!element) return;
+
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(false);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    element.focus();
+  }, [isEditing]);
+
   const commitDraft = (nextValue: string) => {
     setValue(nextValue);
     if (nextValue === (initialValue ?? "")) {
@@ -214,66 +240,37 @@ export function InlineEditor({
   }
 
   if (isEditing) {
-    if (multiline) {
-      return (
-        <textarea
-          className={className}
-          id={id}
-          value={value}
-          onChange={(e) => commitDraft(e.target.value)}
-          onBlur={() => setIsEditing(false)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              e.preventDefault();
-              discardDraft();
-            }
-          }}
-          autoFocus
-          style={{
-            width: "100%",
-            minHeight: "100px",
-            background: "rgba(255,255,255,0.1)",
-            color: "inherit",
-            padding: "0.5rem",
-            borderRadius: "4px",
-            border: "1px solid rgba(255,255,255,0.3)",
-            fontFamily: "inherit",
-            fontSize: "inherit",
-          }}
-        />
-      );
-    }
-
     return (
-      <input
-        type="text"
+      <Tag
         className={className}
         id={id}
-        value={value}
-        onChange={(e) => commitDraft(e.target.value)}
+        ref={editorRef as any}
+        contentEditable
+        suppressContentEditableWarning
+        spellCheck={false}
+        onInput={(e) => {
+          commitDraft((e.currentTarget.textContent || "").replace(/\u00A0/g, " "));
+        }}
         onBlur={() => setIsEditing(false)}
         onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            setIsEditing(false);
-          }
           if (e.key === "Escape") {
             e.preventDefault();
             discardDraft();
           }
+          if (!multiline && e.key === "Enter") {
+            e.preventDefault();
+            setIsEditing(false);
+          }
         }}
-        autoFocus
         style={{
-          width: "100%",
-          background: "rgba(255,255,255,0.1)",
-          color: "inherit",
-          padding: "0.25rem",
-          borderRadius: "4px",
-          border: "1px solid rgba(255,255,255,0.3)",
-          fontFamily: "inherit",
-          fontSize: "inherit",
+          ...editorStyle,
+          outline: "none",
+          cursor: "text",
+          whiteSpace: multiline ? "pre-wrap" : "inherit",
         }}
-      />
+      >
+        {value || "Click to add text"}
+      </Tag>
     );
   }
 

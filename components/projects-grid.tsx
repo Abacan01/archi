@@ -115,7 +115,7 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
 
   return (
     <>
-      <div className="project-grid">
+      <div className="project-grid project-grid-panels">
         {projects.map((project, index) => (
           <div key={project.slug || project.title || project.id || String(index)} style={{ position: "relative" }}>
             {canEdit && (
@@ -134,8 +134,12 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
                 />
               </div>
             )}
-            <article className="project-card project-card-display" data-type={(project.category || "").toLowerCase()} data-stage={project.status === "Completed" || project.status === "Sold" ? "accomplished" : "rendered"}>
-              <div style={{ position: "relative", width: "100%", aspectRatio: "4 / 3", overflow: "hidden", background: "rgba(255,255,255,0.06)" }}>
+            <article
+              className={`project-card project-card-display project-spotlight project-list-panel${index % 2 === 0 ? " is-image-right" : ""}`}
+              data-type={(project.category || "").toLowerCase()}
+              data-stage={project.status === "Completed" || project.status === "Sold" ? "accomplished" : "rendered"}
+            >
+              <div className="project-spotlight-media project-list-panel-media" style={{ position: "relative", height: "100%" }}>
                 {project.coverImageUrl ? (
                   <InlineEditor type="image" path={`projectItems[${index}].coverImageUrl`} initialValue={project.coverImageUrl} />
                 ) : (
@@ -144,11 +148,23 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
                   </div>
                 )}
               </div>
-              <div>
-                <InlineEditor as="p" className="tag" path={`projectItems[${index}].category`} initialValue={project.category} />
-                <InlineEditor as="p" className={`status-pill ${project.status === "Completed" || project.status === "Sold" ? "status-pill-accomplished" : "status-pill-rendered"}`} path={`projectItems[${index}].status`} initialValue={project.status || "Published"} />
-                <InlineEditor as="h3" path={`projectItems[${index}].title`} initialValue={project.title} />
+              <div className="project-spotlight-copy project-list-panel-copy">
+                <div className="spotlight-heading">
+                  <InlineEditor as="h3" path={`projectItems[${index}].title`} initialValue={project.title} />
+                  <InlineEditor as="p" className="spotlight-type" path={`projectItems[${index}].category`} initialValue={project.category || "Residential"} />
+                </div>
                 <InlineEditor as="p" className="spotlight-description" path={`projectItems[${index}].descriptionText`} initialValue={project.descriptionText || ""} multiline />
+                <div className="spotlight-points">
+                  <InlineEditor
+                    as="span"
+                    className={project.status === "Completed" || project.status === "Sold" ? "status-pill-accomplished" : "status-pill-rendered"}
+                    path={`projectItems[${index}].status`}
+                    initialValue={project.status || "Published"}
+                  />
+                  {!!project.location && (
+                    <InlineEditor as="span" path={`projectItems[${index}].location`} initialValue={project.location} />
+                  )}
+                </div>
                 {isEditMode && (
                   <div style={{ marginTop: "1rem", display: "flex", justifyContent: "flex-start", gap: "0.5rem" }}>
                     <EditProjectButton projectIndex={index} project={project} isEditMode={isEditMode} compact />

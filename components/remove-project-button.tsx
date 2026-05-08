@@ -1,9 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { collection, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import { db } from "../lib/firebase/client";
 import { useEditSession } from "./edit-session-provider";
 
 interface RemoveProjectButtonProps {
@@ -14,42 +11,17 @@ interface RemoveProjectButtonProps {
 
 export function RemoveProjectButton({ index, title, isEditMode: isEditModeProp }: RemoveProjectButtonProps) {
   const [isRemoving, setIsRemoving] = useState(false);
-  const router = useRouter();
   const session = useEditSession();
   const canEdit = isEditModeProp !== undefined ? isEditModeProp : Boolean(session?.isEditMode);
 
   const handleRemove = async () => {
-    if (!db || isRemoving || !canEdit) return;
+    if (isRemoving || !canEdit) return;
     if (!window.confirm(`Remove ${title || "this project"}?`)) return;
 
     setIsRemoving(true);
     try {
-      const contentRef = doc(db, "siteContent", "main");
-      const contentSnap = await getDoc(contentRef);
-      if (!contentSnap.exists()) return;
-
-      const data = contentSnap.data();
-      const currentProjects = Array.isArray(data.projectItems) ? [...data.projectItems] : [];
-      if (index < 0 || index >= currentProjects.length) return;
-
-      currentProjects.splice(index, 1);
-
-      await setDoc(contentRef, {
-        ...data,
-        projectItems: currentProjects,
-      }, { merge: false });
-
-      const historyRef = doc(collection(db, "siteHistory"));
-      await setDoc(historyRef, {
-        timestamp: serverTimestamp(),
-        data: {
-          ...data,
-          projectItems: currentProjects,
-        },
-        author: "Admin (Remove Project)",
-      });
-
-      router.refresh();
+      // Queue the delete operation instead of saving immediately
+      session?.addPendingProjectOperation({ type: "delete", index });
     } catch (error) {
       console.error("Failed to remove project:", error);
     } finally {

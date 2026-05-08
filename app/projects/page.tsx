@@ -65,8 +65,10 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
           />
         </div>
         <div className="project-spotlight-copy">
-          <InlineEditor as="h3" path={`projectsPage.${panelPathPrefix}.title`} initialValue={panel.title || fallbackProject?.title || "Featured Architecture"} />
-          <InlineEditor as="p" className="spotlight-type" path={`projectsPage.${panelPathPrefix}.type`} initialValue={panel.type || fallbackProject?.category || "Residential"} />
+          <div className="spotlight-heading">
+            <InlineEditor as="h3" path={`projectsPage.${panelPathPrefix}.title`} initialValue={panel.title || fallbackProject?.title || "Featured Architecture"} />
+            <InlineEditor as="p" className="spotlight-type" path={`projectsPage.${panelPathPrefix}.type`} initialValue={panel.type || fallbackProject?.category || "Residential"} />
+          </div>
           <InlineEditor as="p" className="spotlight-description" path={`projectsPage.${panelPathPrefix}.description`} initialValue={panel.description || "Project details available on request."} multiline />
           <div className="spotlight-points">
             {(panel.points || []).map((point, pointIndex) => (
@@ -131,38 +133,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
 
           {!isEditMode ? (
             <>
-              <article className="project-spotlight" aria-live="polite">
-                <div className="project-spotlight-media" style={{ position: "relative", height: "100%" }}>
-                  <Image
-                    id="spotlightImage"
-                    src={spotlight?.imageUrl || projects[0]?.coverImageUrl || "/assets/images/mckinley-west-residence.jpg"}
-                    alt={spotlight?.imageAlt || "Featured project image"}
-                    fill
-                    sizes="(max-width: 940px) 100vw, 55vw"
-                    style={{ objectFit: "cover", objectPosition: "50% 50%" }}
-                  />
-                </div>
-                <div className="project-spotlight-copy" style={{ position: "relative" }}>
-                  <div>
-                    <InlineEditor as="h3" id="spotlightTitle" path="projectsPage.spotlight.title" initialValue={spotlight?.title || projects[0]?.title || "Mckinley West Residence"} />
-                    <InlineEditor as="p" id="spotlightType" className="spotlight-type" path="projectsPage.spotlight.type" initialValue={spotlight?.type || projects[0]?.category || "Residential"} />
-                  </div>
-                  <InlineEditor as="p" id="spotlightDescription" className="spotlight-description" path="projectsPage.spotlight.description" initialValue={spotlight?.description} multiline />
-                  <div className="spotlight-points">
-                    {(spotlight?.points || []).map((point, idx) => <InlineEditor as="span" key={idx} path={`projectsPage.spotlight.points[${idx}]`} initialValue={point} />)}
-                  </div>
-                  {spotlight?.moreDetailsUrl && (
-                    <a
-                      className="spotlight-more-link"
-                      href={spotlight.moreDetailsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      More Details
-                    </a>
-                  )}
-                </div>
-              </article>
+              {spotlight && renderSpotlightPanel(spotlight, 0)}
 
               {additionalPanels.map((panel, index) => renderSpotlightPanel(panel, index + 1))}
             </>
