@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node scripts/copy-htaccess.mjs",
+    "build": "next build && node scripts/generate-out.mjs",
     "start": "next start",
     "lint": "eslint ."
   },

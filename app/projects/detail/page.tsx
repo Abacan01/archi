@@ -6,6 +6,7 @@ import { SiteHeader } from "../../../components/site-header";
 import { AddProjectButton } from "../../../components/add-project-button";
 import { RemoveProjectButton } from "../../../components/remove-project-button";
 import { GalleryView } from "../../../components/gallery-view";
+import type { GalleryItem } from "../../../lib/content-types";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,14 @@ export default async function ProjectDetailPage({ searchParams }: PageProps) {
   const rawSlug = searchParams?.slug;
   const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug || "";
   const project = slug ? await getProjectBySlug(slug) : null;
-  const gallery = (project?.gallery || []).filter((item) => item.imageUrl);
+  const gallery: GalleryItem[] = (project?.gallery || [])
+    .filter((item): item is { imageUrl: string; imageAlt?: string | null } => Boolean(item.imageUrl))
+    .map((item, index) => ({
+      src: item.imageUrl,
+      alt: item.imageAlt || project?.title || `Project gallery image ${index + 1}`,
+      title: project?.title || `Project image ${index + 1}`,
+      meta: `Image ${index + 1}`,
+    }));
   
   const editModeParam = searchParams?.editMode === "true" ? "?editMode=true" : "";
   const isEditMode = searchParams?.editMode === "true";

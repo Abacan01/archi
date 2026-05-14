@@ -111,21 +111,6 @@ export default function LoginPage() {
 
           {status ? <p className="auth-status">{status}</p> : null}
         </section>
-
-        <aside className="auth-panel">
-          <div className="auth-panel-card">
-            <h2>Quick tips</h2>
-            <ul>
-              <li>Use the JSON editor to update text, links, and media.</li>
-              <li>Upload images first, then paste the URL into content.</li>
-              <li>Need access? Ask the site owner to add your UID to admins.</li>
-            </ul>
-          </div>
-          <div className="auth-panel-card auth-panel-muted">
-            <h3>Safety</h3>
-            <p>Only approved admin accounts can save changes to the site content.</p>
-          </div>
-        </aside>
       </main>
     </>
   );

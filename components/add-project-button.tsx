@@ -137,15 +137,13 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
     setIsUploading(true);
     setUploadMessage("");
     try {
-      const idToken = await authUser.getIdToken();
+      const idToken = authUser ? await authUser.getIdToken() : null;
       const formData = new FormData();
       formData.append("file", file);
 
       const res = await fetch(`/api/cloudinary/upload`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
+        headers: idToken ? { Authorization: `Bearer ${idToken}` } : undefined,
         body: formData,
       });
 
@@ -286,15 +284,13 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
     setIsUploading(true);
     setUploadMessage("");
     try {
-      const idToken = await authUser.getIdToken();
+      const idToken = authUser ? await authUser.getIdToken() : null;
       const formData = new FormData();
       formData.append("file", file);
 
       const res = await fetch(`/api/cloudinary/upload`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
+        headers: idToken ? { Authorization: `Bearer ${idToken}` } : undefined,
         body: formData,
       });
 

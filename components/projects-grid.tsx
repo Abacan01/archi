@@ -52,12 +52,19 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
             ...pendingOp.project,
             tags: (pendingOp.project.tags || []).filter((tag: string) => tag !== tagToRemove),
           };
-          
-          session?.addPendingProjectOperation({
-            type: pendingOp.type,
-            project: updatedProject,
-            ...(pendingOp.type === "edit" ? { index: pendingOp.index } : {}),
-          });
+
+          if (pendingOp.type === "add") {
+            session?.addPendingProjectOperation({
+              type: "add",
+              project: updatedProject,
+            });
+          } else {
+            session?.addPendingProjectOperation({
+              type: "edit",
+              index: pendingOp.index,
+              project: updatedProject,
+            });
+          }
         }
         return;
       }
@@ -69,7 +76,7 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
           (op) => op.type === "edit" && op.index === projectIndex
         );
         
-        const baseProject = existingEditOp ? existingEditOp.project : projects[projectIndex];
+        const baseProject = existingEditOp && existingEditOp.type === "edit" ? existingEditOp.project : projects[projectIndex];
         const project = { ...baseProject };
         const updatedTags = (project.tags || []).filter((tag: string) => tag !== tagToRemove);
         
@@ -107,12 +114,19 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
               ...pendingOp.project,
               tags: existingTags,
             };
-            
-            session?.addPendingProjectOperation({
-              type: pendingOp.type,
-              project: updatedProject,
-              ...(pendingOp.type === "edit" ? { index: pendingOp.index } : {}),
-            });
+
+            if (pendingOp.type === "add") {
+              session?.addPendingProjectOperation({
+                type: "add",
+                project: updatedProject,
+              });
+            } else {
+              session?.addPendingProjectOperation({
+                type: "edit",
+                index: pendingOp.index,
+                project: updatedProject,
+              });
+            }
             
             setNewTagInputs((prev) => ({ ...prev, [projectIndex]: "" }));
           }
@@ -127,7 +141,7 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
           (op) => op.type === "edit" && op.index === projectIndex
         );
         
-        const baseProject = existingEditOp ? existingEditOp.project : projects[projectIndex];
+        const baseProject = existingEditOp && existingEditOp.type === "edit" ? existingEditOp.project : projects[projectIndex];
         const project = { ...baseProject };
         const existingTags = Array.isArray(project.tags) ? [...project.tags] : [];
         

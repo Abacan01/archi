@@ -325,11 +325,18 @@ export function GalleryView({ items }: GalleryViewProps) {
                         borderRadius: "4px",
                       }}
                     >
-                      <button
-                        type="button"
+                      <div
+                        role="button"
+                        tabIndex={0}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleAddPhotoClick();
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.stopPropagation();
+                            handleAddPhotoClick();
+                          }
                         }}
                         style={{
                           padding: "0.4rem 0.8rem",
@@ -344,7 +351,7 @@ export function GalleryView({ items }: GalleryViewProps) {
                         }}
                       >
                         Replace
-                      </button>
+                      </div>
                     </div>
                   )}
                 </button>

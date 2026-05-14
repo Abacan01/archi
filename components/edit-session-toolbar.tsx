@@ -27,7 +27,7 @@ export function EditSessionToolbar() {
     if (isCancelling) return;
     setIsCancelling(true);
     try {
-      cancelAllDrafts();
+      void cancelAllDrafts();
       router.refresh();
     } finally {
       setIsCancelling(false);

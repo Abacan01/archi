@@ -27,10 +27,15 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
   const pathname = usePathname();
   const [isEditMode, setIsEditMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const loginLabel = "Admin Log In";
   const resolvedBrand = brand ?? defaultBrand;
   const items = navItems?.length ? navItems : defaultNavItems;
   const hasLogin = items.some((item) => item.href === "/login");
-  let navLinks = hasLogin ? items : [...items, { href: "/login", label: "Login" }];
+  let allNavLinks = hasLogin ? items : [...items, { href: "/login", label: loginLabel }];
+  
+  // Separate login from regular nav links
+  const regularNavLinks = allNavLinks.filter((item) => item.href !== "/login");
+  const loginItem = allNavLinks.find((item) => item.href === "/login");
 
   useEffect(() => {
     const updateEditMode = () => {
@@ -41,10 +46,6 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
     window.addEventListener("popstate", updateEditMode);
     return () => window.removeEventListener("popstate", updateEditMode);
   }, []);
-
-  if (isEditMode) {
-    navLinks = navLinks.filter((item) => item.href !== "/login");
-  }
 
   function scrollToTopOnActiveHome(event: MouseEvent<HTMLAnchorElement>, href: string) {
     if (pathname === "/" && href === "/") {
@@ -74,7 +75,7 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
         </Link>
 
         <nav className="site-nav" aria-label="Main navigation">
-          {navLinks.map((item) => (
+          {regularNavLinks.map((item) => (
             <Link
               key={item.href}
               className={pathname === item.href ? "active" : ""}
@@ -87,6 +88,11 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
         </nav>
 
         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+          {!isEditMode && loginItem && (
+            <Link href={getNavigationHref(loginItem.href)} className="btn btn-outline">
+              {loginLabel}
+            </Link>
+          )}
           {isEditMode && (
             <>
               <span style={{ 
@@ -123,7 +129,7 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
         className={isMobileMenuOpen ? "mobile-nav open" : "mobile-nav"}
         aria-label="Mobile navigation"
       >
-        {navLinks.map((item) => (
+        {regularNavLinks.map((item) => (
           <Link
             key={item.href}
             className={pathname === item.href ? "active" : ""}
@@ -136,6 +142,16 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
             {item.label}
           </Link>
         ))}
+        {!isEditMode && loginItem && (
+          <Link
+            href={getNavigationHref(loginItem.href)}
+            className="btn btn-outline"
+            style={{ marginTop: "0.5rem", width: "100%" }}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            {loginLabel}
+          </Link>
+        )}
       </nav>
     </header>
   );

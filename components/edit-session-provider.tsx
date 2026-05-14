@@ -67,7 +67,7 @@ export function EditSessionProvider({ children }: { children: ReactNode }) {
     setPendingProjectOps((current) => [...current, operation]);
   }, []);
 
-  const cancelAllDrafts = useCallback(() => {
+  const cancelAllDrafts = useCallback(async () => {
     setDrafts({});
     setPendingProjectOps([]);
   }, []);

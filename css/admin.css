@@ -53,13 +53,14 @@
 }
 
 .admin-card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  background: linear-gradient(180deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08));
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-lg);
   padding: 2rem;
   box-shadow: var(--shadow-soft);
   display: grid;
   gap: 1.4rem;
+  backdrop-filter: blur(8px);
 }
 
 .admin-card-head {
@@ -327,27 +328,44 @@
 }
 
 .btn {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.72rem 1.2rem;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
 }
 
 .auth-page {
   padding: 4rem 0 6rem;
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  grid-template-columns: 1fr;
+  justify-items: center;
+  max-width: 480px;
+  margin: 0 auto;
   gap: 2rem;
   align-items: start;
 }
 
 .auth-card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  background: linear-gradient(180deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08));
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-lg);
   padding: 2.4rem;
   box-shadow: var(--shadow-soft);
   display: grid;
   gap: 1.6rem;
+  backdrop-filter: blur(8px);
 }
 
 .auth-header h1 {
