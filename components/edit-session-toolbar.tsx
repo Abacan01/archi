@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useEditSession } from "./edit-session-provider";
+import { EditFooterButton } from "./edit-footer-button";
 
 export function EditSessionToolbar() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export function EditSessionToolbar() {
     <div
       style={{
         position: "fixed",
-        right: "1.25rem",
+        left: "1.25rem",
         bottom: "1.25rem",
         zIndex: 50,
         display: "flex",
@@ -87,6 +88,7 @@ export function EditSessionToolbar() {
       >
         {isSaving ? "Saving..." : "Save All"}
       </button>
+      <EditFooterButton isEditMode={isEditMode} className="edit-footer-toolbar-trigger" />
     </div>
   );
 }

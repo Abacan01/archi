@@ -7,6 +7,7 @@ import vicmarHomesLogo from "../assets/images/vicmarhomeslogo.png";
 
 type FooterProps = {
   footer?: FooterContent;
+  isEditMode?: boolean;
 };
 
 type BadgeWithFallback = Badge & { fallbackImage?: StaticImageData };
@@ -59,13 +60,13 @@ function renderSocialIcon(link: SocialLink) {
   return null;
 }
 
-export function SiteFooter({ footer }: FooterProps) {
+export function SiteFooter({ footer, isEditMode = false }: FooterProps) {
   const content = footer ?? defaultFooter;
   const socialLinks = content.socialLinks?.length ? content.socialLinks : defaultFooter.socialLinks;
   const badges = content.badges ?? defaultBadges;
 
   return (
-    <footer className="site-footer">
+    <footer className={`site-footer${isEditMode ? " site-footer-edit-mode" : ""}`}>
       <div className="container footer-wrap">
         <p>{content.text}</p>
         <div className="footer-actions">

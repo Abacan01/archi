@@ -14,6 +14,18 @@ interface AboutAchievementsProps {
 
 export function AboutAchievements({ about, isEditMode }: AboutAchievementsProps) {
   const [isAdding, setIsAdding] = useState(false);
+  const addButtonStyle = {
+    marginTop: "0.5rem",
+    width: "100%",
+    padding: "0.5rem 1rem",
+    backgroundColor: "rgba(76, 175, 80, 0.1)",
+    border: "1px solid rgba(76, 175, 80, 0.3)",
+    borderRadius: "4px",
+    color: "#4CAF50",
+    cursor: "pointer",
+    fontSize: "0.875rem",
+    fontWeight: "500",
+  } as const;
 
   const handleAddLicense = async () => {
     if (!db || isAdding) return;
@@ -76,8 +88,14 @@ export function AboutAchievements({ about, isEditMode }: AboutAchievementsProps)
         <div className="about-chip-list">
           {(about.licenseNumbers || []).map((item, idx) => (
             <div key={idx} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <InlineEditor as="span" className="about-chip" path={`about.licenseNumbers[${idx}]`} initialValue={item} />
-              {isEditMode && <ArrayItemRemoveButton path="about.licenseNumbers" index={idx} />}
+              <InlineEditor as="span" className="about-chip" path={`about.licenseNumbers[${idx}]`} initialValue={item} emptyText="" />
+              {isEditMode && (
+                <ArrayItemRemoveButton
+                  path="about.licenseNumbers"
+                  index={idx}
+                  renderAsMarker
+                />
+              )}
             </div>
           ))}
         </div>
@@ -86,17 +104,7 @@ export function AboutAchievements({ about, isEditMode }: AboutAchievementsProps)
             type="button"
             onClick={handleAddLicense}
             disabled={isAdding}
-            style={{
-              marginTop: "0.5rem",
-              padding: "0.5rem 1rem",
-              backgroundColor: "rgba(76, 175, 80, 0.1)",
-              border: "1px solid rgba(76, 175, 80, 0.3)",
-              borderRadius: "4px",
-              color: "#4CAF50",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-              fontWeight: "500",
-            }}
+            style={addButtonStyle}
           >
             + Add License
           </button>
@@ -108,8 +116,14 @@ export function AboutAchievements({ about, isEditMode }: AboutAchievementsProps)
         <div className="about-chip-list">
           {(about.specializations || []).map((item, idx) => (
             <div key={idx} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <InlineEditor as="span" className="about-chip" path={`about.specializations[${idx}]`} initialValue={item} />
-              {isEditMode && <ArrayItemRemoveButton path="about.specializations" index={idx} />}
+              <InlineEditor as="span" className="about-chip" path={`about.specializations[${idx}]`} initialValue={item} emptyText="" />
+              {isEditMode && (
+                <ArrayItemRemoveButton
+                  path="about.specializations"
+                  index={idx}
+                  renderAsMarker
+                />
+              )}
             </div>
           ))}
         </div>
@@ -118,17 +132,7 @@ export function AboutAchievements({ about, isEditMode }: AboutAchievementsProps)
             type="button"
             onClick={handleAddSpecialization}
             disabled={isAdding}
-            style={{
-              marginTop: "0.5rem",
-              padding: "0.5rem 1rem",
-              backgroundColor: "rgba(76, 175, 80, 0.1)",
-              border: "1px solid rgba(76, 175, 80, 0.3)",
-              borderRadius: "4px",
-              color: "#4CAF50",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-              fontWeight: "500",
-            }}
+            style={addButtonStyle}
           >
             + Add Specialization
           </button>
@@ -140,8 +144,14 @@ export function AboutAchievements({ about, isEditMode }: AboutAchievementsProps)
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           {(about.memberships || []).map((membership, idx) => (
             <div key={idx} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem" }}>
-              <InlineEditor path={`about.memberships[${idx}].title`} initialValue={membership.title} />
-              {isEditMode && <ArrayItemRemoveButton path="about.memberships" index={idx} />}
+              <InlineEditor path={`about.memberships[${idx}].title`} initialValue={membership.title} emptyText="" />
+              {isEditMode && (
+                <ArrayItemRemoveButton
+                  path="about.memberships"
+                  index={idx}
+                  renderAsMarker
+                />
+              )}
             </div>
           ))}
         </div>
@@ -150,17 +160,7 @@ export function AboutAchievements({ about, isEditMode }: AboutAchievementsProps)
             type="button"
             onClick={handleAddMembership}
             disabled={isAdding}
-            style={{
-              marginTop: "0.5rem",
-              padding: "0.5rem 1rem",
-              backgroundColor: "rgba(76, 175, 80, 0.1)",
-              border: "1px solid rgba(76, 175, 80, 0.3)",
-              borderRadius: "4px",
-              color: "#4CAF50",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-              fontWeight: "500",
-            }}
+            style={addButtonStyle}
           >
             + Add Membership
           </button>

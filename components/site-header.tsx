@@ -62,7 +62,7 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
   };
 
   return (
-    <header className="site-header" id="top">
+    <header className="site-header" id="top" suppressHydrationWarning>
       <div className="container nav-wrap island">
         <Link
           className="brand"

@@ -7,17 +7,18 @@ import { ContactCard } from "../../components/contact-card";
 export const dynamic = "force-dynamic";
 
 type ContactPageProps = {
-  searchParams?: { [key: string]: string | string[] };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 export default async function ContactPage({ searchParams }: ContactPageProps) {
-  const isEditMode = searchParams?.editMode === "true";
+  const resolvedSearchParams = await searchParams;
+  const isEditMode = resolvedSearchParams?.editMode === "true";
   const siteContent = await getSiteContent();
   const contact = siteContent.contact;
   return (
     <>
       <SiteHeader brand={siteContent.global.brand} navItems={siteContent.global.navItems} />
-      <div className="top-progress" id="topProgress" aria-hidden="true" />
+      <div className="top-progress" id="topProgress" aria-hidden="true" suppressHydrationWarning />
 
       <main>
         <section className="section container reveal" id="contact">
@@ -143,7 +144,7 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
         </section>
       </main>
 
-      <SiteFooter footer={siteContent.global.footer} />
+      <SiteFooter footer={siteContent.global.footer} isEditMode={isEditMode} />
     </>
   );
 }

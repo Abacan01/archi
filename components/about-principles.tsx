@@ -14,6 +14,17 @@ interface AboutPrinciplesProps {
 
 export function AboutPrinciples({ about, isEditMode }: AboutPrinciplesProps) {
   const [isAdding, setIsAdding] = useState(false);
+  const addButtonStyle = {
+    marginTop: "0.75rem",
+    padding: "0.5rem 1rem",
+    backgroundColor: "rgba(76, 175, 80, 0.1)",
+    border: "1px solid rgba(76, 175, 80, 0.3)",
+    borderRadius: "4px",
+    color: "#4CAF50",
+    cursor: "pointer",
+    fontSize: "0.875rem",
+    fontWeight: "500",
+  } as const;
 
   const handleAddPrinciple = async () => {
     if (!db || isAdding) return;
@@ -41,10 +52,21 @@ export function AboutPrinciples({ about, isEditMode }: AboutPrinciplesProps) {
           <article className="service-row" key={idx} style={{ position: "relative" }}>
             {isEditMode && (
               <div style={{ position: "absolute", top: 0, right: 0 }}>
-                <ArrayItemRemoveButton path="about.principles" index={idx} />
+                <ArrayItemRemoveButton
+                  path="about.principles"
+                  index={idx}
+                  renderAsMarker
+                />
               </div>
             )}
-            <InlineEditor as="blockquote" className="design-philosophy-quote" path={`about.principles[${idx}]`} initialValue={paragraph} multiline />
+            <InlineEditor
+              as="blockquote"
+              className="design-philosophy-quote"
+              path={`about.principles[${idx}]`}
+              initialValue={paragraph}
+              multiline
+              emptyText=""
+            />
           </article>
         ))}
       </div>
@@ -53,19 +75,9 @@ export function AboutPrinciples({ about, isEditMode }: AboutPrinciplesProps) {
           type="button"
           onClick={handleAddPrinciple}
           disabled={isAdding}
-          style={{
-            marginTop: "1rem",
-            padding: "0.5rem 1rem",
-            backgroundColor: "rgba(76, 175, 80, 0.1)",
-            border: "1px solid rgba(76, 175, 80, 0.3)",
-            borderRadius: "4px",
-            color: "#4CAF50",
-            cursor: "pointer",
-            fontSize: "0.875rem",
-            fontWeight: "500",
-          }}
+          style={addButtonStyle}
         >
-          + Add Design Principle
+          + Add Principle
         </button>
       )}
     </section>

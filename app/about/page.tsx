@@ -21,7 +21,7 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
   return (
     <>
       <SiteHeader brand={global.brand} navItems={global.navItems} />
-      <div className="top-progress" id="topProgress" aria-hidden="true" />
+      <div className="top-progress" id="topProgress" aria-hidden="true" suppressHydrationWarning />
 
       <main>
         <section className="section container reveal" id="about">
@@ -56,7 +56,7 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
         </section>
       </main>
 
-      <SiteFooter footer={global.footer} />
+      <SiteFooter footer={global.footer} isEditMode={isEditMode} />
     </>
   );
 }

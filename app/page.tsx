@@ -30,7 +30,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <>
       <SiteHeader brand={global.brand} navItems={global.navItems} />
-      <div className="top-progress" id="topProgress" aria-hidden="true" />
+      <div className="top-progress" id="topProgress" aria-hidden="true" suppressHydrationWarning />
 
       <main>
         <section className="hero section container" id="home">
@@ -90,7 +90,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </section>
       </main>
 
-      <SiteFooter footer={global.footer} />
+      <SiteFooter footer={global.footer} isEditMode={searchParams?.editMode === "true"} />
     </>
   );
 }

@@ -1,3 +1,10 @@
+(() => {
+if (window.__siteRuntimeScriptLoaded) {
+  return;
+}
+
+window.__siteRuntimeScriptLoaded = true;
+
 const menuToggle = document.getElementById("menuToggle");
 const mobileMenu = document.getElementById("mobileMenu");
 const header = document.querySelector(".site-header");
@@ -1395,7 +1402,7 @@ function initializePhilippineAddressFields() {
 const addressFields = initializePhilippineAddressFields();
 
 if (form && formMessage) {
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     if (addressFields) {
@@ -1409,8 +1416,60 @@ if (form && formMessage) {
       return;
     }
 
-    formMessage.textContent = "Thanks. Your inquiry has been drafted locally.";
-    form.reset();
+    formMessage.textContent = "Sending...";
+
+    try {
+      const formData = new FormData(form);
+      const payload = Object.fromEntries(formData.entries());
+
+      console.log("📤 Submitting contact form with data:", { name: payload.name, email: payload.email });
+
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (e) {
+        data = null;
+      }
+
+      if (res.ok) {
+        console.log("✅ Email sent successfully!");
+        formMessage.textContent = "Thanks — your inquiry was sent.";
+        form.reset();
+      } else {
+        const bodyText = data && Object.keys(data).length ? JSON.stringify(data) : await res.text().catch(() => "");
+        const errorMessage = data?.error || `Failed to send inquiry (status ${res.status}).`;
+        const details = data?.details || "";
+        
+        formMessage.textContent = errorMessage;
+        
+        console.error("❌ Contact send failed:", {
+          status: res.status,
+          statusText: res.statusText,
+          error: data?.error,
+          details: details,
+          fullResponse: data || bodyText,
+        });
+
+        if (res.status === 502) {
+          console.error("🔧 Debug info - 502 Error (EmailJS Failed):");
+          console.error("   This usually means the EmailJS service rejected the request.");
+          console.error("   Check your .env file for correct credentials:");
+          console.error("   - EMAILJS_SERVICE_ID");
+          console.error("   - EMAILJS_TEMPLATE_ID");
+          console.error("   - EMAILJS_PUBLIC_KEY");
+          console.error("   Response details:", details);
+        }
+      }
+    } catch (err) {
+      console.error("❌ Network or parsing error:", err);
+      formMessage.textContent = "An error occurred while sending your inquiry. Please try again.";
+    }
   });
 }
 
@@ -1420,4 +1479,6 @@ backToTopLinks.forEach((link) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 });
+
+})();
 

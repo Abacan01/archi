@@ -36,7 +36,7 @@ export default async function ProjectDetailPage({ searchParams }: PageProps) {
   return (
     <>
       <SiteHeader brand={siteContent.global.brand} navItems={siteContent.global.navItems} />
-      <div className="top-progress" id="topProgress" aria-hidden="true" />
+      <div className="top-progress" id="topProgress" aria-hidden="true" suppressHydrationWarning />
 
       <main>
         <section className="section container reveal" id="project-detail">
@@ -110,7 +110,7 @@ export default async function ProjectDetailPage({ searchParams }: PageProps) {
         </section>
       </main>
 
-      <SiteFooter footer={siteContent.global.footer} />
+      <SiteFooter footer={siteContent.global.footer} isEditMode={searchParams?.editMode === "true"} />
     </>
   );
 }

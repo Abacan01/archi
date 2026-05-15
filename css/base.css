@@ -686,6 +686,16 @@ body.lightbox-active .site-header {
   margin-left: auto;
 }
 
+.site-footer-edit-mode .back-to-top {
+  margin-right: 11rem;
+}
+
+@media (max-width: 720px) {
+  .site-footer-edit-mode .back-to-top {
+    margin-right: 0;
+  }
+}
+
 .reveal {
   opacity: 1;
   transform: none;

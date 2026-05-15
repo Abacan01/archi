@@ -5,14 +5,18 @@ import { GalleryView } from "../../components/gallery-view";
 
 export const dynamic = "force-dynamic";
 
-export default async function GalleryPage() {
+type GalleryPageProps = {
+  searchParams?: { [key: string]: string | string[] };
+};
+
+export default async function GalleryPage({ searchParams }: GalleryPageProps) {
   const siteContent = await getSiteContent();
   const items = siteContent.gallery.items || [];
 
   return (
     <>
       <SiteHeader brand={siteContent.global.brand} navItems={siteContent.global.navItems} />
-      <div className="top-progress" id="topProgress" aria-hidden="true" />
+      <div className="top-progress" id="topProgress" aria-hidden="true" suppressHydrationWarning />
 
       <main>
         <section className="section container gallery-view-page" id="gallery-view">
@@ -20,7 +24,7 @@ export default async function GalleryPage() {
         </section>
       </main>
 
-      <SiteFooter footer={siteContent.global.footer} />
+      <SiteFooter footer={siteContent.global.footer} isEditMode={searchParams?.editMode === "true"} />
     </>
   );
 }

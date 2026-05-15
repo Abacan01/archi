@@ -15,6 +15,7 @@ interface InlineEditorProps {
   id?: string;
   multiline?: boolean;
   type?: "text" | "image";
+  emptyText?: string;
 }
 
 export function InlineEditor({
@@ -25,6 +26,7 @@ export function InlineEditor({
   id,
   multiline,
   type = "text",
+  emptyText = "Click to add text",
 }: InlineEditorProps) {
   const { getDraftValue, setDraftValue, clearDraftValue } = useEditSession();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -305,7 +307,7 @@ export function InlineEditor({
         whiteSpace: multiline ? "pre-line" : "normal",
       }}
     >
-      {resolvedValue || "Click to add text"}
+      {resolvedValue || emptyText}
     </Tag>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { CSSProperties } from "react";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../lib/firebase/client";
@@ -115,9 +116,12 @@ export function ArrayEditorButton({ path, label, newItemTemplate = {} }: ArrayEd
 interface ArrayItemRemoveButtonProps {
   path: string;
   index: number;
+  renderAsX?: boolean;
+  renderAsMarker?: boolean;
+  style?: CSSProperties;
 }
 
-export function ArrayItemRemoveButton({ path, index }: ArrayItemRemoveButtonProps) {
+export function ArrayItemRemoveButton({ path, index, renderAsX = false, renderAsMarker = false, style }: ArrayItemRemoveButtonProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
 
@@ -183,17 +187,22 @@ export function ArrayItemRemoveButton({ path, index }: ArrayItemRemoveButtonProp
       disabled={isBusy}
       title="Remove this item"
       style={{
-        padding: "0.35rem 0.6rem",
+        width: renderAsMarker ? "18px" : (renderAsX ? "18px" : undefined),
+        height: renderAsMarker ? "12px" : (renderAsX ? "18px" : undefined),
+        padding: renderAsMarker ? 0 : (renderAsX ? 0 : "0.35rem 0.6rem"),
         backgroundColor: "rgba(255, 68, 68, 0.1)",
         border: "1px solid rgba(255, 68, 68, 0.3)",
-        borderRadius: "4px",
+        borderRadius: renderAsMarker ? "4px" : (renderAsX ? "999px" : "4px"),
         color: "#FF4444",
         cursor: "pointer",
-        fontSize: "0.875rem",
+        fontSize: renderAsMarker ? "0" : (renderAsX ? "0.75rem" : "0.875rem"),
         display: "flex",
         alignItems: "center",
         gap: "0.25rem",
+        justifyContent: "center",
+        lineHeight: 1,
         transition: "all 0.2s",
+        ...style,
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.backgroundColor = "rgba(255, 68, 68, 0.2)";
@@ -202,7 +211,7 @@ export function ArrayItemRemoveButton({ path, index }: ArrayItemRemoveButtonProp
         e.currentTarget.style.backgroundColor = "rgba(255, 68, 68, 0.1)";
       }}
     >
-      <IconTrash />
+      {renderAsMarker ? null : (renderAsX ? "x" : <IconTrash />)}
     </button>
   );
 }
