@@ -1,4 +1,6 @@
-import { getSiteContent } from "../../lib/content";
+"use client";
+
+import { useSearchParams } from "next/navigation";
 import { defaultSiteContent } from "../../lib/content-defaults";
 import { SiteFooter } from "../../components/site-footer";
 import { SiteHeader } from "../../components/site-header";
@@ -8,17 +10,13 @@ import { ProjectsGrid } from "../../components/projects-grid";
 import BulkDeleteTrigger from "../../components/bulk-delete-trigger";
 import { SpotlightEditGrid } from "../../components/spotlight-edit-grid";
 import type { ProjectItem, SpotlightPanel } from "../../lib/content-types";
+import { useLiveSiteContent } from "../../components/use-live-site-content";
 
-export const dynamic = "force-dynamic";
-
-type ProjectsPageProps = {
-  searchParams?: { [key: string]: string | string[] };
-};
-
-export default async function ProjectsPage({ searchParams }: ProjectsPageProps) {
-  const isEditMode = searchParams?.editMode === "true";
+export default function ProjectsPage() {
+  const searchParams = useSearchParams();
+  const isEditMode = searchParams.get("editMode") === "true";
   const editModeParam = isEditMode ? "?editMode=true" : "";
-  const siteContent = await getSiteContent();
+  const siteContent = useLiveSiteContent(defaultSiteContent);
   const content = siteContent.projectsPage;
   const projects: ProjectItem[] = siteContent.projectItems || [];
   const defaultProjectsContent = defaultSiteContent.projectsPage;

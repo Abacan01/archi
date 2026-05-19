@@ -13,8 +13,6 @@ import { IconUser, IconKey, IconLogin, IconLogout, IconUpload, IconSave, IconSee
 const CONTENT_DOC = "main";
 const CONTENT_COLLECTION = "siteContent";
 
-export const dynamic = "force-dynamic";
-
 type ToastTone = "success" | "error" | "info";
 
 type ToastMessage = {
@@ -113,7 +111,22 @@ export default function AdminPage() {
     if (!auth) return;
     await signOut(auth);
     showToast("Signed out.", "info");
-    router.push("/login");
+    // ensure any UI overlays or lightbox state are cleared when signing out
+    try {
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.remove("lightbox-active");
+        document.body.classList.remove("lightbox-active");
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
+        document.body.style.width = "";
+      }
+    } catch (e) {
+      // ignore DOM cleanup errors
+    }
+
+    router.replace("/login");
   }
 
   function openModal(next: ModalState) {

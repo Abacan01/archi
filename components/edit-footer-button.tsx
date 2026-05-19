@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { collection, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../lib/firebase/client";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import type { FooterContent, SocialLink, Badge } from "../lib/content-types";
@@ -138,28 +138,45 @@ export function EditFooterButton({ footer, isEditMode, compact = false, classNam
     setIsSaving(true);
 
     try {
-      const contentRef = doc(db, "siteContent", "main");
-      const snap = await getDoc(contentRef);
-
-      if (!snap.exists()) {
-        throw new Error("Content document not found.");
+      const firestore = db;
+      if (!firestore) {
+        return;
       }
 
-      const currentData = snap.data();
-      const updatedData = {
-        ...currentData,
-        global: {
-          ...currentData.global,
-          footer: {
-            text,
-            socialLinks,
-            badges,
-          },
-        },
-        updatedAt: serverTimestamp(),
-      };
+      const contentRef = doc(firestore, "siteContent", "main");
+      const author = authUser?.email || authUser?.uid || "Admin (Footer Edit)";
 
-      await setDoc(contentRef, updatedData);
+      await runTransaction(firestore, async (transaction) => {
+        const snap = await transaction.get(contentRef);
+
+        if (!snap.exists()) {
+          throw new Error("Content document not found.");
+        }
+
+        const currentData = snap.data();
+        const updatedData = {
+          ...currentData,
+          global: {
+            ...currentData.global,
+            footer: {
+              text,
+              socialLinks,
+              badges,
+            },
+          },
+          updatedAt: serverTimestamp(),
+          updatedBy: author,
+        };
+
+        const historyRef = doc(collection(firestore, "siteHistory"));
+        transaction.set(contentRef, updatedData, { merge: false });
+        transaction.set(historyRef, {
+          timestamp: serverTimestamp(),
+          data: updatedData,
+          author,
+        });
+      });
+
       setIsEditing(false);
       router.refresh();
     } catch (error) {

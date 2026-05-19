@@ -1,20 +1,19 @@
+"use client";
+
 import Image from "next/image";
-import { getSiteContent } from "../lib/content";
+import { useSearchParams } from "next/navigation";
+import { defaultSiteContent } from "../lib/content-defaults";
 import { SiteFooter } from "../components/site-footer";
 import { SiteHeader } from "../components/site-header";
 import { InlineEditor } from "../components/inline-editor";
+import { useLiveSiteContent } from "../components/use-live-site-content";
 
-export const dynamic = "force-dynamic";
-
-type HomePageProps = {
-  searchParams?: { [key: string]: string | string[] };
-};
-
-export default async function HomePage({ searchParams }: HomePageProps) {
-  const siteContent = await getSiteContent();
+export default function HomePage() {
+  const searchParams = useSearchParams();
+  const siteContent = useLiveSiteContent(defaultSiteContent);
   const { home, global, projectItems } = siteContent;
-  
-  const editModeParam = searchParams?.editMode === "true" ? "?editMode=true" : "";
+
+  const editModeParam = searchParams.get("editMode") === "true" ? "?editMode=true" : "";
 
   const projects = projectItems || [];
   const featuredProject = projects[0];
@@ -90,7 +89,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </section>
       </main>
 
-      <SiteFooter footer={global.footer} isEditMode={searchParams?.editMode === "true"} />
+      <SiteFooter footer={global.footer} isEditMode={searchParams.get("editMode") === "true"} />
     </>
   );
 }

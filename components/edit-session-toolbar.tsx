@@ -1,24 +1,30 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useEditSession } from "./edit-session-provider";
 import { EditFooterButton } from "./edit-footer-button";
 
 export function EditSessionToolbar() {
-  const router = useRouter();
   const { isEditMode, pendingChangeCount, saveAllDrafts, cancelAllDrafts } = useEditSession();
   const [isSaving, setIsSaving] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [publishNote, setPublishNote] = useState<string | null>(null);
 
   if (!isEditMode) return null;
 
   const handleSaveAll = async () => {
     if (pendingChangeCount === 0 || isSaving) return;
     setIsSaving(true);
+    setPublishNote(null);
     try {
-      await saveAllDrafts();
-      router.refresh();
+      const result = await saveAllDrafts();
+      if (result.savedCount > 0) {
+        setPublishNote(
+          result.historyVerified
+            ? `Published successfully. History entry ${result.historyId} verified. Live site updates should appear right away.`
+            : `Published successfully, but history verification is still pending.`
+        );
+      }
     } finally {
       setIsSaving(false);
     }
@@ -29,7 +35,7 @@ export function EditSessionToolbar() {
     setIsCancelling(true);
     try {
       void cancelAllDrafts();
-      router.refresh();
+      setPublishNote(null);
     } finally {
       setIsCancelling(false);
     }
@@ -86,8 +92,13 @@ export function EditSessionToolbar() {
           fontWeight: 800,
         }}
       >
-        {isSaving ? "Saving..." : "Save All"}
+        {isSaving ? "Publishing..." : "Publish Update"}
       </button>
+      {publishNote ? (
+        <span style={{ color: "rgba(255,255,255,0.72)", fontSize: "0.78rem", maxWidth: "22rem", lineHeight: 1.35 }}>
+          {publishNote}
+        </span>
+      ) : null}
       <EditFooterButton isEditMode={isEditMode} className="edit-footer-toolbar-trigger" />
     </div>
   );

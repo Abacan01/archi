@@ -9,6 +9,7 @@ import type { ProjectItem } from "../lib/content-types";
 import type { CSSProperties } from "react";
 import { useEditSession } from "./edit-session-provider";
 import { createPortal } from "react-dom";
+import { uploadCloudinaryImage } from "../lib/cloudinary-browser-upload";
 
 interface AddProjectButtonProps {
   isEditMode: boolean;
@@ -137,22 +138,8 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
     setIsUploading(true);
     setUploadMessage("");
     try {
-      const idToken = authUser ? await authUser.getIdToken() : null;
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch(`/api/cloudinary/upload`, {
-        method: "POST",
-        headers: idToken ? { Authorization: `Bearer ${idToken}` } : undefined,
-        body: formData,
-      });
-
-      const payload = await res.json();
-      if (!res.ok || !payload?.secureUrl) {
-        throw new Error(payload?.error || "Upload failed");
-      }
-
-      setCoverImageUrl(payload.secureUrl);
+      const secureUrl = await uploadCloudinaryImage(file);
+      setCoverImageUrl(secureUrl);
     } catch (err) {
       console.error("Image upload failed:", err);
     } finally {
@@ -284,22 +271,8 @@ export function AddProjectButton({ isEditMode, compact = false, label = "+ Add P
     setIsUploading(true);
     setUploadMessage("");
     try {
-      const idToken = authUser ? await authUser.getIdToken() : null;
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch(`/api/cloudinary/upload`, {
-        method: "POST",
-        headers: idToken ? { Authorization: `Bearer ${idToken}` } : undefined,
-        body: formData,
-      });
-
-      const payload = await res.json();
-      if (!res.ok || !payload?.secureUrl) {
-        throw new Error(payload?.error || "Upload failed");
-      }
-
-      setCoverImageUrl(payload.secureUrl);
+      const secureUrl = await uploadCloudinaryImage(file);
+      setCoverImageUrl(secureUrl);
     } catch (err) {
       console.error("Image upload failed:", err);
     } finally {

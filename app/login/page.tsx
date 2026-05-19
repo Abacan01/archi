@@ -3,19 +3,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { auth, db, isFirebaseConfigured } from "../../lib/firebase/client";
 import { SiteHeader } from "../../components/site-header";
 
-export const dynamic = "force-dynamic";
-
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const shouldReturnToEditMode = searchParams.get("editMode") === "true";
 
   useEffect(() => {
     if (!auth || !db) return;
@@ -33,10 +33,10 @@ export default function LoginPage() {
       const hasAdmin = adminSnap.exists();
       setIsAdmin(hasAdmin);
       if (hasAdmin) {
-        router.push("/admin");
+        router.push(shouldReturnToEditMode ? "/?editMode=true" : "/admin");
       }
     });
-  }, [router]);
+  }, [router, shouldReturnToEditMode]);
 
   async function handleLogin(event: React.FormEvent) {
     event.preventDefault();
@@ -47,8 +47,8 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       setEmail("");
       setPassword("");
-      setStatus("Signed in. Redirecting to admin...");
-      router.push("/admin");
+      setStatus(shouldReturnToEditMode ? "Signed in. Opening edit mode..." : "Signed in. Redirecting to admin...");
+      router.push(shouldReturnToEditMode ? "/?editMode=true" : "/admin");
     } catch (error) {
       setStatus("Login failed. Check your credentials.");
     } finally {
@@ -69,7 +69,7 @@ export default function LoginPage() {
   return (
     <>
       <SiteHeader />
-      <main className="auth-page container">
+      <main className="auth-page">
         <section className="auth-card">
           <header className="auth-header">
             <div className="auth-logo">

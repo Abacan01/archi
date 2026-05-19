@@ -9,6 +9,20 @@ export function parseEditorPath(path: string) {
   return segments;
 }
 
+export function getNestedValue(source: unknown, path: string) {
+  const segments = parseEditorPath(path);
+  let current: any = source;
+
+  for (const segment of segments) {
+    if (current == null) {
+      return undefined;
+    }
+    current = current[segment as any];
+  }
+
+  return current;
+}
+
 export function setNestedValue<T>(source: T, path: string, nextValue: unknown): T {
   const segments = parseEditorPath(path);
   if (segments.length === 0 || source == null || typeof source !== "object") {

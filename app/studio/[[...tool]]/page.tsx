@@ -1,5 +1,9 @@
-import { redirect } from "next/navigation";
+import { StudioRedirectClient } from "./studio-redirect-client";
+
+export function generateStaticParams() {
+  return [{ tool: [] }];
+}
 
 export default function StudioPage() {
-  redirect("/admin");
+  return <StudioRedirectClient />;
 }

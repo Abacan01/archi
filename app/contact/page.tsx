@@ -1,19 +1,17 @@
-import { getSiteContent } from "../../lib/content";
+"use client";
+
+import { useSearchParams } from "next/navigation";
+import { defaultSiteContent } from "../../lib/content-defaults";
 import { SiteFooter } from "../../components/site-footer";
 import { SiteHeader } from "../../components/site-header";
 import { InlineEditor } from "../../components/inline-editor";
 import { ContactCard } from "../../components/contact-card";
+import { useLiveSiteContent } from "../../components/use-live-site-content";
 
-export const dynamic = "force-dynamic";
-
-type ContactPageProps = {
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
-};
-
-export default async function ContactPage({ searchParams }: ContactPageProps) {
-  const resolvedSearchParams = await searchParams;
-  const isEditMode = resolvedSearchParams?.editMode === "true";
-  const siteContent = await getSiteContent();
+export default function ContactPage() {
+  const searchParams = useSearchParams();
+  const isEditMode = searchParams.get("editMode") === "true";
+  const siteContent = useLiveSiteContent(defaultSiteContent);
   const contact = siteContent.contact;
   return (
     <>
@@ -26,7 +24,7 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
             <InlineEditor as="h2" path="contact.title" initialValue={contact.title} />
           </div>
           <div className="contact-layout">
-            <form id="contactForm" className="contact-form" noValidate>
+            <form id="contactForm" className="contact-form" data-recipient-email={contact.email || "josephchua.2000@gmail.com"} noValidate>
               <div className="contact-form-head">
                 <InlineEditor as="h3" path="contact.formTitle" initialValue={contact.formTitle} />
                 <InlineEditor as="p" path="contact.formIntro" initialValue={contact.formIntro} multiline />

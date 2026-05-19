@@ -8,6 +8,7 @@ import { IconPlus, IconTrash, IconUpload } from "../app/admin/icons";
 import { useEditSession } from "./edit-session-provider";
 import { auth, db } from "../lib/firebase/client";
 import type { GalleryItem } from "../lib/content-types";
+import { uploadCloudinaryImage } from "../lib/cloudinary-browser-upload";
 
 type GalleryViewProps = {
   items: GalleryItem[];
@@ -125,28 +126,13 @@ export function GalleryView({ items }: GalleryViewProps) {
 
     setIsBusy(true);
     try {
-      const idToken = await auth.currentUser.getIdToken();
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch("/api/cloudinary/upload", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: formData,
-      });
-
-      const payload = await response.json().catch(() => null);
-      if (!response.ok || !payload?.secureUrl) {
-        throw new Error(payload?.error || "Upload failed.");
-      }
+      const secureUrl = await uploadCloudinaryImage(file);
 
       const title = humanizeFileName(file.name);
       const nextItems = [
         ...galleryItems,
         {
-          src: payload.secureUrl,
+          src: secureUrl,
           alt: title,
           title,
           meta: "Uploaded photo",

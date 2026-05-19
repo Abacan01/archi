@@ -1424,51 +1424,30 @@ if (form && formMessage) {
 
       console.log("📤 Submitting contact form with data:", { name: payload.name, email: payload.email });
 
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const recipientEmail = form.dataset.recipientEmail || "josephchua.2000@gmail.com";
+      const subjectLine = String(payload.subject || "Website inquiry");
+      const bodyLines = [
+        `Name: ${payload.name || ""}`,
+        `Email: ${payload.email || ""}`,
+        `Mobile: ${payload.mobile || ""}`,
+        `Project Type: ${payload.type || ""}`,
+        `Service Needed: ${payload.service || ""}`,
+        `Province: ${payload.provinceCity || ""}`,
+        `Municipality / City: ${payload.municipalityCity || ""}`,
+        `Barangay: ${payload.barangay || ""}`,
+        `Postal Code: ${payload.postalCode || ""}`,
+        `Address Details: ${payload.addressDetails || ""}`,
+        "",
+        `Message: ${payload.message || ""}`,
+      ];
+      const mailtoUrl = `mailto:${encodeURIComponent(recipientEmail)}?subject=${encodeURIComponent(subjectLine)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
 
-      let data = null;
-      try {
-        data = await res.json();
-      } catch (e) {
-        data = null;
-      }
-
-      if (res.ok) {
-        console.log("✅ Email sent successfully!");
-        formMessage.textContent = "Thanks — your inquiry was sent.";
-        form.reset();
-      } else {
-        const bodyText = data && Object.keys(data).length ? JSON.stringify(data) : await res.text().catch(() => "");
-        const errorMessage = data?.error || `Failed to send inquiry (status ${res.status}).`;
-        const details = data?.details || "";
-        
-        formMessage.textContent = errorMessage;
-        
-        console.error("❌ Contact send failed:", {
-          status: res.status,
-          statusText: res.statusText,
-          error: data?.error,
-          details: details,
-          fullResponse: data || bodyText,
-        });
-
-        if (res.status === 502) {
-          console.error("🔧 Debug info - 502 Error (EmailJS Failed):");
-          console.error("   This usually means the EmailJS service rejected the request.");
-          console.error("   Check your .env file for correct credentials:");
-          console.error("   - EMAILJS_SERVICE_ID");
-          console.error("   - EMAILJS_TEMPLATE_ID");
-          console.error("   - EMAILJS_PUBLIC_KEY");
-          console.error("   Response details:", details);
-        }
-      }
+      window.location.href = mailtoUrl;
+      formMessage.textContent = "Your email app should open with the inquiry filled in.";
+      form.reset();
     } catch (err) {
       console.error("❌ Network or parsing error:", err);
-      formMessage.textContent = "An error occurred while sending your inquiry. Please try again.";
+      formMessage.textContent = "An error occurred while preparing your inquiry. Please try again.";
     }
   });
 }

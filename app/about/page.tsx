@@ -1,21 +1,20 @@
+"use client";
+
 import Image from "next/image";
-import { getSiteContent } from "../../lib/content";
+import { useSearchParams } from "next/navigation";
+import { defaultSiteContent } from "../../lib/content-defaults";
 import { SiteFooter } from "../../components/site-footer";
 import { SiteHeader } from "../../components/site-header";
 import { InlineEditor } from "../../components/inline-editor";
 import { AboutAchievements } from "../../components/about-achievements";
 import { AboutServices } from "../../components/about-services";
 import { AboutPrinciples } from "../../components/about-principles";
+import { useLiveSiteContent } from "../../components/use-live-site-content";
 
-export const dynamic = "force-dynamic";
-
-type AboutPageProps = {
-  searchParams?: { [key: string]: string | string[] };
-};
-
-export default async function AboutPage({ searchParams }: AboutPageProps) {
-  const isEditMode = searchParams?.editMode === "true";
-  const siteContent = await getSiteContent();
+export default function AboutPage() {
+  const searchParams = useSearchParams();
+  const isEditMode = searchParams.get("editMode") === "true";
+  const siteContent = useLiveSiteContent(defaultSiteContent);
   const { about, global } = siteContent;
 
   return (

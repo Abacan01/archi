@@ -10,9 +10,10 @@ try {
   mkdirSync(outDir, { recursive: true });
 
   const deployUrl = process.env.DEPLOY_URL || process.env.NEXT_PUBLIC_DEPLOY_URL || '';
-  const redirectTarget = deployUrl || '/';
 
-  const indexHtml = `<!doctype html>
+  if (deployUrl) {
+    const redirectTarget = deployUrl;
+    const indexHtml = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -25,8 +26,11 @@ try {
   </body>
 </html>`;
 
-  writeFileSync(join(outDir, 'index.html'), indexHtml, 'utf8');
-  console.log('Wrote out/index.html');
+    writeFileSync(join(outDir, 'index.html'), indexHtml, 'utf8');
+    console.log('Wrote out/index.html (redirect to', deployUrl + ')');
+  } else {
+    console.log('Skipping writing out/index.html redirect because DEPLOY_URL is not set.');
+  }
 
   if (existsSync(sourceHtaccess)) {
     copyFileSync(sourceHtaccess, targetHtaccess);

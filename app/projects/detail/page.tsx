@@ -1,24 +1,30 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { getProjectBySlug, getSiteContent } from "../../../lib/content";
+import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import { defaultSiteContent } from "../../../lib/content-defaults";
 import { SiteFooter } from "../../../components/site-footer";
 import { SiteHeader } from "../../../components/site-header";
 import { AddProjectButton } from "../../../components/add-project-button";
 import { RemoveProjectButton } from "../../../components/remove-project-button";
 import { GalleryView } from "../../../components/gallery-view";
 import type { GalleryItem } from "../../../lib/content-types";
+import { useLiveSiteContent } from "../../../components/use-live-site-content";
 
-export const dynamic = "force-dynamic";
+export default function ProjectDetailPage() {
+  const searchParams = useSearchParams();
+  const siteContent = useLiveSiteContent(defaultSiteContent);
+  const slug = searchParams.get("slug") || "";
+  const isEditMode = searchParams.get("editMode") === "true";
+  const editModeParam = isEditMode ? "?editMode=true" : "";
 
-type PageProps = {
-  searchParams?: { slug?: string | string[]; editMode?: string | string[] };
-};
+  const project = useMemo(() => {
+    if (!slug) return null;
+    return siteContent.projectItems.find((item) => item.slug === slug) || null;
+  }, [slug, siteContent.projectItems]);
 
-export default async function ProjectDetailPage({ searchParams }: PageProps) {
-  const siteContent = await getSiteContent();
-  const rawSlug = searchParams?.slug;
-  const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug || "";
-  const project = slug ? await getProjectBySlug(slug) : null;
   const gallery: GalleryItem[] = (project?.gallery || [])
     .filter((item): item is { imageUrl: string; imageAlt?: string | null } => Boolean(item.imageUrl))
     .map((item, index) => ({
@@ -27,9 +33,6 @@ export default async function ProjectDetailPage({ searchParams }: PageProps) {
       title: project?.title || `Project image ${index + 1}`,
       meta: `Image ${index + 1}`,
     }));
-  
-  const editModeParam = searchParams?.editMode === "true" ? "?editMode=true" : "";
-  const isEditMode = searchParams?.editMode === "true";
   const projects = siteContent.projectItems || [];
   const projectIndex = project ? projects.findIndex((p) => p.slug === project.slug) : -1;
 
@@ -110,7 +113,7 @@ export default async function ProjectDetailPage({ searchParams }: PageProps) {
         </section>
       </main>
 
-      <SiteFooter footer={siteContent.global.footer} isEditMode={searchParams?.editMode === "true"} />
+      <SiteFooter footer={siteContent.global.footer} isEditMode={isEditMode} />
     </>
   );
 }

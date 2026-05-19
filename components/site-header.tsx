@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type MouseEvent } from "react";
+import { useEditSession } from "./edit-session-provider";
 import type { Brand, NavItem } from "../lib/content-types";
+import { auth, db } from "../lib/firebase/client";
 
 type SiteHeaderProps = {
   brand?: Brand;
@@ -25,7 +27,10 @@ const defaultNavItems: NavItem[] = [
 
 export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
   const pathname = usePathname();
-  const [isEditMode, setIsEditMode] = useState(false);
+  const { isEditMode, isAdmin } = useEditSession();
+  const [isAdminUser, setIsAdminUser] = useState(false);
+  const [hasEditParam, setHasEditParam] = useState(false);
+  const [showEditRedirectBanner, setShowEditRedirectBanner] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const loginLabel = "Admin Log In";
   const resolvedBrand = brand ?? defaultBrand;
@@ -38,14 +43,34 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
   const loginItem = allNavLinks.find((item) => item.href === "/login");
 
   useEffect(() => {
-    const updateEditMode = () => {
-      setIsEditMode(window.location.search.includes("editMode=true"));
-    };
+    // mirror the session's admin state locally for conditional rendering
+    setIsAdminUser(Boolean(isAdmin));
+  }, [isAdmin]);
 
-    updateEditMode();
-    window.addEventListener("popstate", updateEditMode);
-    return () => window.removeEventListener("popstate", updateEditMode);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const present = window.location.search.includes("editMode=true");
+    setHasEditParam(present);
   }, []);
+
+  useEffect(() => {
+    let t: number | undefined;
+    if (hasEditParam && !isAdminUser) {
+      setShowEditRedirectBanner(true);
+      // auto-redirect after short delay to the same URL without editMode param
+      t = window.setTimeout(() => {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("editMode");
+        window.location.replace(url.toString());
+      }, 3000);
+    } else {
+      setShowEditRedirectBanner(false);
+    }
+
+    return () => {
+      if (t) window.clearTimeout(t);
+    };
+  }, [hasEditParam, isAdminUser]);
 
   function scrollToTopOnActiveHome(event: MouseEvent<HTMLAnchorElement>, href: string) {
     if (pathname === "/" && href === "/") {
@@ -62,7 +87,19 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
   };
 
   return (
-    <header className="site-header" id="top" suppressHydrationWarning>
+    <>
+      {showEditRedirectBanner ? (
+        <div style={{ background: "#fff4e5", color: "#663c00", padding: "0.5rem 1rem", textAlign: "center", fontWeight: 600 }}>
+          You are viewing an edit-mode URL — please sign in as an admin to edit. Redirecting to the public site in 3 seconds. <a href="#" onClick={(e) => {
+            e.preventDefault();
+            const url = new URL(window.location.href);
+            url.searchParams.delete("editMode");
+            window.location.replace(url.toString());
+          }} style={{ marginLeft: "0.5rem", textDecoration: "underline" }}>Continue now</a>
+        </div>
+      ) : null}
+
+      <header className="site-header" id="top" suppressHydrationWarning>
       <div className="container nav-wrap island">
         <Link
           className="brand"
@@ -88,11 +125,16 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
         </nav>
 
         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          {!isEditMode && loginItem && (
+          {!isEditMode && isAdminUser ? (
+            <Link href="/admin" className="btn btn-outline">
+              Back to Dashboard
+            </Link>
+          ) : null}
+          {!isEditMode && !isAdminUser && loginItem ? (
             <Link href={getNavigationHref(loginItem.href)} className="btn btn-outline">
               {loginLabel}
             </Link>
-          )}
+          ) : null}
           {isEditMode && (
             <>
               <span style={{ 
@@ -106,7 +148,7 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
                 EDIT MODE
               </span>
               <Link href="/admin" className="btn btn-outline" style={{ padding: "0.5rem 1rem", fontSize: "0.875rem" }}>
-                Back to Admin
+                Back to Dashboard
               </Link>
             </>
           )}
@@ -142,7 +184,17 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
             {item.label}
           </Link>
         ))}
-        {!isEditMode && loginItem && (
+        {!isEditMode && isAdminUser ? (
+          <Link
+            href="/admin"
+            className="btn btn-outline"
+            style={{ marginTop: "0.5rem", width: "100%" }}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Back to Dashboard
+          </Link>
+        ) : null}
+        {!isEditMode && !isAdminUser && loginItem && (
           <Link
             href={getNavigationHref(loginItem.href)}
             className="btn btn-outline"
@@ -154,5 +206,6 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
         )}
       </nav>
     </header>
+    </>
   );
 }

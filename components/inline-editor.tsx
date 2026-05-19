@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../lib/firebase/client";
 import { useEditSession } from "./edit-session-provider";
 import { setNestedValue } from "../lib/editor-path";
+import { uploadCloudinaryImage } from "../lib/cloudinary-browser-upload";
 
 interface InlineEditorProps {
   path: string;
@@ -82,19 +83,29 @@ export function InlineEditor({
   const persistImmediateValue = async (nextValue: string) => {
     if (!db) return;
 
-    const contentRef = doc(db, "siteContent", "main");
-    const snap = await getDoc(contentRef);
-    if (!snap.exists()) return;
+    const firestore = db;
+    if (!firestore) {
+      return;
+    }
 
-    const updatedData = setNestedValue(snap.data(), path, nextValue);
-    await setDoc(contentRef, updatedData, { merge: false });
-
+    const contentRef = doc(firestore, "siteContent", "main");
     const author = auth?.currentUser?.email || auth?.currentUser?.uid || "Admin (Inline Edit)";
-    const historyRef = doc(collection(db, "siteHistory"));
-    await setDoc(historyRef, {
-      timestamp: serverTimestamp(),
-      data: updatedData,
-      author,
+
+    await runTransaction(firestore, async (transaction) => {
+      const snap = await transaction.get(contentRef);
+      if (!snap.exists()) return;
+
+      const updatedData = setNestedValue(snap.data(), path, nextValue);
+      updatedData.updatedAt = serverTimestamp();
+      updatedData.updatedBy = author;
+
+      const historyRef = doc(collection(firestore, "siteHistory"));
+      transaction.set(contentRef, updatedData, { merge: false });
+      transaction.set(historyRef, {
+        timestamp: serverTimestamp(),
+        data: updatedData,
+        author,
+      });
     });
   };
 
@@ -115,25 +126,9 @@ export function InlineEditor({
 
     setIsUploading(true);
     try {
-      const idToken = await auth.currentUser.getIdToken();
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch("/api/cloudinary/upload", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: formData,
-      });
-
-      const payload = await response.json();
-      if (!response.ok || !payload?.secureUrl) {
-        throw new Error(payload?.error || "Upload failed.");
-      }
-
-      setValue(payload.secureUrl);
-      await persistImmediateValue(payload.secureUrl);
+      const secureUrl = await uploadCloudinaryImage(file);
+      setValue(secureUrl);
+      await persistImmediateValue(secureUrl);
       clearDraftValue(path);
     } catch (err) {
       console.error("Image upload failed:", err);
@@ -174,7 +169,7 @@ export function InlineEditor({
       clearDraftValue(path);
       return;
     }
-    setDraftValue(path, nextValue);
+    setDraftValue(path, nextValue, initialValue ?? resolvedValue);
   };
 
   const discardDraft = () => {

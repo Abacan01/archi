@@ -5,6 +5,7 @@ import { IconTrash, IconPlus, IconLayers, IconUpload } from "./icons";
 import { auth } from "../../lib/firebase/client";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { useEffect } from "react";
+import { uploadCloudinaryImage } from "../../lib/cloudinary-browser-upload";
 
 interface EditorFormProps {
   data: any;
@@ -57,26 +58,11 @@ export function EditorForm({ data, onChange, onUploadRequest }: EditorFormProps)
     }
 
     try {
-      const idToken = await authUser.getIdToken();
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch(`/api/cloudinary/upload`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: formData,
-      });
-
-      const payload = await res.json();
-      if (!res.ok || !payload?.secureUrl) {
-        throw new Error(payload?.error || "Upload failed");
-      }
+      const secureUrl = await uploadCloudinaryImage(file);
 
       // call the pending callback (either EditorForm user-provided or the field onChange)
       if (pendingUploadCallback.current) {
-        pendingUploadCallback.current(payload.secureUrl);
+        pendingUploadCallback.current(secureUrl);
       }
     } catch (err) {
       console.error("Image upload failed:", err);
