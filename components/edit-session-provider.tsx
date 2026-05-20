@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, useRef, type ReactNode } from "react";
 import ToastContainer from "./toast";
 import { collection, doc, getDoc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
@@ -23,6 +23,9 @@ type EditSessionContextValue = {
   setDraftValue: (path: string, value: string, baseValue?: string) => void;
   clearDraftValue: (path: string) => void;
   addPendingProjectOperation: (operation: PendingProjectOperation) => void;
+  removePendingProjectOperation: (pendingIndex: number) => void;
+  discardPendingWithUndo: (pendingIndex: number) => void;
+  restoreLastRemovedPending: () => void;
   cancelAllDrafts: () => Promise<void>;
   saveAllDrafts: () => Promise<{
     savedCount: number;
@@ -122,6 +125,61 @@ export function EditSessionProvider({ children }: { children: ReactNode }) {
     setPendingProjectOps((current) => [...current, operation]);
   }, []);
 
+  const removePendingProjectOperation = useCallback((pendingIndex: number) => {
+    setPendingProjectOps((current) => {
+      if (pendingIndex < 0 || pendingIndex >= current.length) return current;
+      const next = [...current];
+      next.splice(pendingIndex, 1);
+      return next;
+    });
+  }, []);
+
+  // Support undoable discard of pending operations
+  const lastRemovedRef = useRef<{ op: PendingProjectOperation; index: number; timeoutId?: number } | null>(null);
+
+  const restoreLastRemovedPending = useCallback(() => {
+    const entry = lastRemovedRef.current;
+    if (!entry) return;
+    setPendingProjectOps((current) => {
+      const next = [...current];
+      const insertAt = Math.min(Math.max(0, entry.index), next.length);
+      next.splice(insertAt, 0, entry.op);
+      return next;
+    });
+    if (entry.timeoutId) {
+      window.clearTimeout(entry.timeoutId);
+    }
+    lastRemovedRef.current = null;
+  }, []);
+
+  const discardPendingWithUndo = useCallback((pendingIndex: number) => {
+    setPendingProjectOps((current) => {
+      if (pendingIndex < 0 || pendingIndex >= current.length) return current;
+      const next = [...current];
+      const [removed] = next.splice(pendingIndex, 1);
+      // store for undo
+      if (removed) {
+        if (lastRemovedRef.current && lastRemovedRef.current.timeoutId) {
+          window.clearTimeout(lastRemovedRef.current.timeoutId);
+        }
+        const timeoutId = window.setTimeout(() => {
+          lastRemovedRef.current = null;
+        }, 6000) as unknown as number;
+        lastRemovedRef.current = { op: removed, index: pendingIndex, timeoutId };
+      }
+      return next;
+    });
+  }, []);
+
+  // Listen for a global undo event (fired by toast action)
+  useEffect(() => {
+    const handler = () => {
+      restoreLastRemovedPending();
+    };
+    window.addEventListener("archi:undo-discard", handler as EventListener);
+    return () => window.removeEventListener("archi:undo-discard", handler as EventListener);
+  }, [restoreLastRemovedPending]);
+
   const cancelAllDrafts = useCallback(async () => {
     setDrafts({});
     setDraftBases({});
@@ -207,9 +265,12 @@ export function EditSessionProvider({ children }: { children: ReactNode }) {
     setDraftValue,
     clearDraftValue,
     addPendingProjectOperation,
+    removePendingProjectOperation,
+    discardPendingWithUndo,
+    restoreLastRemovedPending,
     cancelAllDrafts,
     saveAllDrafts,
-  }), [cancelAllDrafts, clearDraftValue, drafts, getDraftValue, isEditMode, saveAllDrafts, setDraftValue, addPendingProjectOperation, pendingProjectOps]);
+  }), [cancelAllDrafts, clearDraftValue, drafts, getDraftValue, isEditMode, saveAllDrafts, setDraftValue, addPendingProjectOperation, pendingProjectOps, discardPendingWithUndo, restoreLastRemovedPending]);
 
   return (
     <>
@@ -232,6 +293,9 @@ export function useEditSession() {
     setDraftValue: () => {},
     clearDraftValue: () => {},
     addPendingProjectOperation: () => {},
+    removePendingProjectOperation: () => {},
+    discardPendingWithUndo: () => {},
+    restoreLastRemovedPending: () => {},
     cancelAllDrafts: async () => {},
     saveAllDrafts: async () => ({ savedCount: 0, historyId: null, historyVerified: false }),
   } satisfies EditSessionContextValue;

@@ -8,6 +8,7 @@ import { collection, doc, getDoc, serverTimestamp, setDoc } from "firebase/fires
 import { db } from "../lib/firebase/client";
 import { InlineEditor } from "./inline-editor";
 import { useEffect, useMemo } from "react";
+import { showToast } from "./toast";
 import { useEditSession } from "./edit-session-provider";
 import type { ProjectItem } from "../lib/content-types";
 
@@ -302,6 +303,34 @@ export function ProjectsGrid({ projects, isEditMode }: ProjectsGridProps) {
                   }}
                   title="Select for bulk delete"
                 />
+              </div>
+            )}
+            {isPendingProject(index) && (
+              <div style={{ position: "absolute", top: "0.5rem", right: "0.5rem", zIndex: 15 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!window.confirm("Discard this draft?")) return;
+                    const pendingIdx = getPendingProjectIndex(index);
+                    if (typeof pendingIdx === "number") {
+                      session?.discardPendingWithUndo(pendingIdx);
+                      showToast("Draft discarded.", "info", "Undo", "archi:undo-discard");
+                    }
+                  }}
+                  title="Discard draft"
+                  style={{
+                    padding: "0.35rem 0.6rem",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(255,120,120,0.3)",
+                    background: "rgba(255,120,120,0.1)",
+                    color: "#ffd",
+                    cursor: "pointer",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                  }}
+                >
+                  Discard
+                </button>
               </div>
             )}
             <article

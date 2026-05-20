@@ -9,6 +9,8 @@ import { AddProjectButton } from "../../components/add-project-button";
 import { ProjectsGrid } from "../../components/projects-grid";
 import BulkDeleteTrigger from "../../components/bulk-delete-trigger";
 import { SpotlightEditGrid } from "../../components/spotlight-edit-grid";
+import { useEditSession } from "../../components/edit-session-provider";
+import { showToast } from "../../components/toast";
 import type { ProjectItem, SpotlightPanel } from "../../lib/content-types";
 import { useLiveSiteContent } from "../../components/use-live-site-content";
 
@@ -20,6 +22,7 @@ export default function ProjectsPage() {
   const content = siteContent.projectsPage;
   const projects: ProjectItem[] = siteContent.projectItems || [];
   const defaultProjectsContent = defaultSiteContent.projectsPage;
+  const session = useEditSession();
 
   const spotlight = content.spotlight || defaultProjectsContent.spotlight;
   const additionalPanels = [
@@ -67,6 +70,32 @@ export default function ProjectsPage() {
                 }}
               />
               <BulkDeleteTrigger isEditMode={isEditMode} />
+              {isEditMode ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!window.confirm("Discard ALL drafts? This cannot be undone.")) return;
+                    try {
+                      await session.cancelAllDrafts();
+                      showToast("All drafts discarded.", "success");
+                    } catch (err) {
+                      console.error(err);
+                      showToast("Failed to discard drafts.", "error");
+                    }
+                  }}
+                  style={{
+                    padding: "0.45rem 0.9rem",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(255,255,255,0.02)",
+                    color: "var(--text)",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                  }}
+                >
+                  Discard Drafts
+                </button>
+              ) : null}
             </div>
           </div>
 

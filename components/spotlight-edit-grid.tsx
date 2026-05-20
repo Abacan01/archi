@@ -28,7 +28,7 @@ export function SpotlightEditGrid({ spotlight, additionalPanels, projects }: Spo
   return (
     <div className="project-grid">
       {panels.map((panel, index) => {
-        const fallbackProject = projects[index] || projects[0];
+        const fallbackProject = projects[index] ?? undefined;
         const panelPathPrefix = index === 0 ? "spotlight" : index === 1 ? "spotlightTwo" : index === 2 ? "spotlightThree" : "spotlightFour";
 
         return (
@@ -56,7 +56,7 @@ export function SpotlightEditGrid({ spotlight, additionalPanels, projects }: Spo
                 <InlineEditor
                   type="image"
                   path={`projectsPage.${panelPathPrefix}.imageUrl`}
-                  initialValue={panel.imageUrl || fallbackProject?.coverImageUrl || "/assets/images/mckinley-west-residence.jpg"}
+                    initialValue={panel.imageUrl || fallbackProject?.coverImageUrl || "/assets/images/lgv.avif"}
                 />
                 {hoveredIndex === index && (
                   <div
