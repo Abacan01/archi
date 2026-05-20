@@ -9,6 +9,7 @@ import { useEditSession } from "./edit-session-provider";
 import { auth, db } from "../lib/firebase/client";
 import type { GalleryItem } from "../lib/content-types";
 import { uploadCloudinaryImage } from "../lib/cloudinary-browser-upload";
+import { showToast } from "./toast";
 
 type GalleryViewProps = {
   items: GalleryItem[];
@@ -17,6 +18,7 @@ type GalleryViewProps = {
 export function GalleryView({ items }: GalleryViewProps) {
   const session = useEditSession();
   const [galleryItems, setGalleryItems] = useState(items);
+  const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
@@ -106,7 +108,8 @@ export function GalleryView({ items }: GalleryViewProps) {
     return normalized.replace(/\b\w/g, (character) => character.toUpperCase());
   };
 
-  const handleAddPhotoClick = () => {
+  const handleAddPhotoClick = (index: number | null = null) => {
+    setReplaceIndex(index);
     fileInputRef.current?.click();
   };
 
@@ -129,26 +132,36 @@ export function GalleryView({ items }: GalleryViewProps) {
       const secureUrl = await uploadCloudinaryImage(file);
 
       const title = humanizeFileName(file.name);
-      const nextItems = [
-        ...galleryItems,
-        {
-          src: secureUrl,
-          alt: title,
-          title,
-          meta: "Uploaded photo",
-        },
-      ];
+      const newItem: GalleryItem = {
+        src: secureUrl,
+        alt: title,
+        title,
+        meta: "Uploaded photo",
+      };
 
-      setGalleryItems(nextItems);
-      setActiveIndex(nextItems.length - 1);
+      let nextItems: GalleryItem[];
+      if (replaceIndex !== null && replaceIndex >= 0 && replaceIndex < galleryItems.length) {
+        nextItems = [...galleryItems];
+        nextItems[replaceIndex] = newItem;
+        setGalleryItems(nextItems);
+        setActiveIndex(replaceIndex);
+      } else {
+        nextItems = [...galleryItems, newItem];
+        setGalleryItems(nextItems);
+        setActiveIndex(nextItems.length - 1);
+      }
+
       await persistGalleryItems(nextItems);
+      showToast("Image uploaded", "success");
     } catch (error) {
       console.error("Failed to add gallery photo:", error);
+      showToast(`Upload failed: ${String(error)}`, "error");
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
       setIsBusy(false);
+      setReplaceIndex(null);
     }
   };
 
@@ -200,7 +213,7 @@ export function GalleryView({ items }: GalleryViewProps) {
             <button
               type="button"
               className="gallery-admin-button gallery-admin-button-primary"
-              onClick={handleAddPhotoClick}
+              onClick={() => handleAddPhotoClick(null)}
               disabled={isBusy}
             >
               <IconPlus />
@@ -242,7 +255,7 @@ export function GalleryView({ items }: GalleryViewProps) {
               <button
                 type="button"
                 className="gallery-admin-button gallery-admin-button-primary"
-                onClick={handleAddPhotoClick}
+                onClick={() => handleAddPhotoClick(null)}
                 disabled={isBusy}
               >
                 <IconUpload />
@@ -316,12 +329,12 @@ export function GalleryView({ items }: GalleryViewProps) {
                         tabIndex={0}
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleAddPhotoClick();
+                          handleAddPhotoClick(index);
                         }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.stopPropagation();
-                            handleAddPhotoClick();
+                            handleAddPhotoClick(index);
                           }
                         }}
                         style={{

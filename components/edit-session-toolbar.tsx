@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useEditSession } from "./edit-session-provider";
 import { EditFooterButton } from "./edit-footer-button";
 
 export function EditSessionToolbar() {
+  const router = useRouter();
   const { isEditMode, pendingChangeCount, saveAllDrafts, cancelAllDrafts } = useEditSession();
   const [isSaving, setIsSaving] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -24,6 +26,19 @@ export function EditSessionToolbar() {
             ? `Published successfully. History entry ${result.historyId} verified. Live site updates should appear right away.`
             : `Published successfully, but history verification is still pending.`
         );
+
+        // After successful publish, exit edit mode by removing query param and navigating
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("editMode");
+          // add a short param to indicate publish completed (optional)
+          url.searchParams.set("published", result.historyId || "true");
+          // Replace location to update the UI and end edit session
+          window.location.replace(url.toString());
+        } catch (e) {
+          // Fallback: use router to push to root without editMode
+          router.push(window.location.pathname || "/");
+        }
       }
     } finally {
       setIsSaving(false);
@@ -45,8 +60,9 @@ export function EditSessionToolbar() {
     <div
       style={{
         position: "fixed",
-        left: "1.25rem",
-        bottom: "1.25rem",
+        left: "50%",
+        transform: "translateX(-50%)",
+        bottom: "4rem",
         zIndex: 50,
         display: "flex",
         alignItems: "center",

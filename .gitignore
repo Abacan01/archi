@@ -7,6 +7,8 @@ dist
 .env
 .env.*
 !.env*.example
+# Explicitly ignore local env file containing secrets
+.env.local
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

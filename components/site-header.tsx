@@ -28,7 +28,7 @@ const defaultNavItems: NavItem[] = [
 export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
   const pathname = usePathname();
   const { isEditMode, isAdmin } = useEditSession();
-  const [isAdminUser, setIsAdminUser] = useState(false);
+  const isAdminUser = Boolean(isAdmin);
   const [hasEditParam, setHasEditParam] = useState(false);
   const [showEditRedirectBanner, setShowEditRedirectBanner] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -42,10 +42,7 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
   const regularNavLinks = allNavLinks.filter((item) => item.href !== "/login");
   const loginItem = allNavLinks.find((item) => item.href === "/login");
 
-  useEffect(() => {
-    // mirror the session's admin state locally for conditional rendering
-    setIsAdminUser(Boolean(isAdmin));
-  }, [isAdmin]);
+  // `isAdminUser` derived directly from context to avoid stale mirrors
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -78,6 +75,23 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
+
+  const normalizePath = (p?: string | null) => {
+    if (!p) return "";
+    try {
+      // remove trailing slashes except for root
+      return p.replace(/\/+$|^\s+|\s+$/g, "") || "/";
+    } catch {
+      return p;
+    }
+  };
+
+  const isActive = (href: string) => {
+    const pn = normalizePath(pathname ?? "/");
+    const hn = normalizePath(href);
+    if (hn === "/") return pn === "/";
+    return pn === hn || pn.startsWith(hn + "/");
+  };
 
   const getNavigationHref = (href: string) => {
     if (isEditMode) {
@@ -115,7 +129,7 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
           {regularNavLinks.map((item) => (
             <Link
               key={item.href}
-              className={pathname === item.href ? "active" : ""}
+              className={isActive(item.href) ? "active" : ""}
               href={getNavigationHref(item.href)}
               onClick={(event) => scrollToTopOnActiveHome(event, item.href)}
             >
@@ -125,11 +139,6 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
         </nav>
 
         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          {!isEditMode && isAdminUser ? (
-            <Link href="/admin" className="btn btn-outline">
-              Back to Dashboard
-            </Link>
-          ) : null}
           {!isEditMode && !isAdminUser && loginItem ? (
             <Link href={getNavigationHref(loginItem.href)} className="btn btn-outline">
               {loginLabel}
@@ -174,7 +183,7 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
         {regularNavLinks.map((item) => (
           <Link
             key={item.href}
-            className={pathname === item.href ? "active" : ""}
+            className={isActive(item.href) ? "active" : ""}
             href={getNavigationHref(item.href)}
             onClick={(event) => {
               scrollToTopOnActiveHome(event, item.href);
@@ -184,16 +193,16 @@ export function SiteHeader({ brand, navItems }: SiteHeaderProps) {
             {item.label}
           </Link>
         ))}
-        {!isEditMode && isAdminUser ? (
+        {!isEditMode && loginItem && (
           <Link
-            href="/admin"
+            href={getNavigationHref(loginItem.href)}
             className="btn btn-outline"
             style={{ marginTop: "0.5rem", width: "100%" }}
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            Back to Dashboard
+            {loginLabel}
           </Link>
-        ) : null}
+        )}
         {!isEditMode && !isAdminUser && loginItem && (
           <Link
             href={getNavigationHref(loginItem.href)}

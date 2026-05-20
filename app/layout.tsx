@@ -58,6 +58,11 @@ export default function RootLayout({
           <EditSessionProvider>
             {children}
             <EditSessionToolbar />
+            {/* toast container for client notifications */}
+            <div id="__site_toast_container">
+              {/* dynamically imported small component */}
+              <script dangerouslySetInnerHTML={{ __html: "" }} />
+            </div>
           </EditSessionProvider>
         </Suspense>
         <SiteRuntimeScript />

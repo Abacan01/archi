@@ -527,6 +527,20 @@
   line-height: 1.1;
 }
 
+/* Hide compact inline marker buttons (small remove markers) that appear next to chips
+   They are rendered with inline styles (width:18px / font-size:0) — this override hides them. */
+.about-chip-list button[style*="width: 18px"],
+.about-chip-list button[style*="font-size: 0"],
+.about-chip-list button[style*="width:18px"],
+.about-chip-list button[style*="font-size:0"],
+/* also hide markers used in service/principles lists */
+.service-stack button[style*="width: 18px"],
+.service-stack button[style*="font-size: 0"],
+.service-stack button[style*="width:18px"],
+.service-stack button[style*="font-size:0"] {
+  display: none !important;
+}
+
 .about-membership-line {
   margin: 0;
   color: var(--text);

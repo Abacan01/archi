@@ -7,6 +7,7 @@ import { auth, db } from "../lib/firebase/client";
 import { useEditSession } from "./edit-session-provider";
 import { setNestedValue } from "../lib/editor-path";
 import { uploadCloudinaryImage } from "../lib/cloudinary-browser-upload";
+import { showToast } from "./toast";
 
 interface InlineEditorProps {
   path: string;
@@ -43,11 +44,11 @@ export function InlineEditor({
   const editorStyle = {
     width: "100%",
     display: "block",
-    background: "rgba(255,255,255,0.08)",
+    background: "transparent",
     color: "inherit",
     padding: multiline ? "0.45rem 0.5rem" : "0.2rem 0.35rem",
     borderRadius: "4px",
-    border: "1px solid rgba(255,255,255,0.28)",
+    border: "none",
     boxSizing: "border-box" as const,
   };
 
@@ -130,8 +131,10 @@ export function InlineEditor({
       setValue(secureUrl);
       await persistImmediateValue(secureUrl);
       clearDraftValue(path);
+      showToast("Image uploaded", "success");
     } catch (err) {
       console.error("Image upload failed:", err);
+      showToast(`Upload failed: ${String(err)}`, "error");
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -200,9 +203,9 @@ export function InlineEditor({
           display: "block",
           width: "100%",
           height: "100%",
-          outline: isHovered ? "2px dashed rgba(255,255,255,0.5)" : "none",
-          outlineOffset: "4px",
-          transition: "outline 0.2s ease",
+          outline: "none",
+          outlineOffset: "0",
+          transition: "opacity 0.2s ease",
           opacity: isUploading ? 0.5 : 1,
         }}
       >
@@ -271,11 +274,11 @@ export function InlineEditor({
           }
         }}
         style={{
-          ...editorStyle,
-          outline: "none",
-          cursor: "text",
-          whiteSpace: multiline ? "pre-wrap" : "inherit",
-        }}
+        ...editorStyle,
+        outline: "none",
+        cursor: "text",
+        whiteSpace: multiline ? "pre-wrap" : "inherit",
+      }}
       />
     );
   }
@@ -295,10 +298,10 @@ export function InlineEditor({
       title="Click to edit"
       style={{
         cursor: "pointer",
-        outline: isHovered ? "2px dashed rgba(255,255,255,0.5)" : "none",
-        outlineOffset: "4px",
+        outline: "none",
+        outlineOffset: "0",
         borderRadius: "2px",
-        transition: "outline 0.2s ease",
+        transition: "opacity 0.15s ease",
         whiteSpace: multiline ? "pre-line" : "normal",
       }}
     >

@@ -148,6 +148,9 @@ export function ArrayItemRemoveButton({ path, index, renderAsX = false, renderAs
     return unsubscribe;
   }, []);
 
+  // Don't render compact marker variant (inline small boxes) — hide by returning null.
+  if (renderAsMarker) return null;
+
   const handleRemoveItem = async () => {
     if (!isAdmin || !db || isBusy) return;
     if (!confirm("Remove this item?")) return;

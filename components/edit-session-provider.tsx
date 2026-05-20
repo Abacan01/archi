@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import ToastContainer from "./toast";
 import { collection, doc, getDoc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useSearchParams } from "next/navigation";
@@ -210,7 +211,12 @@ export function EditSessionProvider({ children }: { children: ReactNode }) {
     saveAllDrafts,
   }), [cancelAllDrafts, clearDraftValue, drafts, getDraftValue, isEditMode, saveAllDrafts, setDraftValue, addPendingProjectOperation, pendingProjectOps]);
 
-  return <EditSessionContext.Provider value={value}>{children}</EditSessionContext.Provider>;
+  return (
+    <>
+      <EditSessionContext.Provider value={value}>{children}</EditSessionContext.Provider>
+      <ToastContainer />
+    </>
+  );
 }
 
 export function useEditSession() {
